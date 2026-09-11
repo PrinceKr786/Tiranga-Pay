@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet">
+    <style>
+    .auth-page {
+        font-family: 'Manrope', sans-serif;
+        color: #1B2430;
+        background: #F4F6F9;
+        min-height: 100vh;
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
+        position: relative;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Orange Hero Header */
+    .auth-hero {
+        background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
+        border-radius: 0 0 32px 32px;
+        padding: 40px 24px 70px;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-hero::before {
+        content: "";
+        position: absolute;
+        right: -30px;
+        top: -30px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        pointer-events: none;
+    }
+    .auth-hero::after {
+        content: "";
+        position: absolute;
+        left: -40px;
+        bottom: -40px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+    }
+    .auth-hero-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin: 0 0 4px;
+    }
+    .auth-hero-subtitle {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 16px;
+    }
+    .auth-hero-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .auth-hero-tag {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        padding: 5px 12px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #FFFFFF;
+    }
+
+    /* Floating Card Container */
+    .auth-card-container {
+        padding: 0 18px;
+        margin-top: -45px;
+        z-index: 10;
+        flex: 1;
+    }
+    .auth-card {
+        background: #FFFFFF;
+        border-radius: 28px;
+        padding: 22px 20px;
+        box-shadow: 0 20px 40px rgba(60, 80, 120, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+
+    /* Tab Switcher */
+    .auth-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #F8FAFC;
+        border-radius: 16px;
+        padding: 4px;
+        margin-bottom: 20px;
+        border: 1px solid #E2E8F0;
+    }
+    .auth-tab {
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14.5px;
+        font-weight: 700;
+        font-family: 'Sora', sans-serif;
+        color: #64748B;
+        text-decoration: none;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    .auth-tab.active {
+        background: #FFFFFF;
+        color: #FF6600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        font-weight: 800;
+        border: 1px solid #FFEDD5;
+    }
+
+    /* Input Rows */
+    .auth-input-row {
+        position: relative;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+    }
+    .auth-icon-badge {
+        position: absolute;
+        left: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #FF6600, #FF8533);
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 800;
+        flex-shrink: 0;
+        box-shadow: 0 4px 8px rgba(255, 102, 0, 0.25);
+    }
+    .auth-icon-badge.dial {
+        font-size: 12.5px;
+        font-family: 'Sora', sans-serif;
+    }
+    .auth-input {
+        width: 100%;
+        height: 52px;
+        border-radius: 16px;
+        border: 1.5px solid #F1F5F9;
+        background: #F8FAFC;
+        padding: 0 16px 0 54px;
+        font-size: 14px;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+        color: #1E293B;
+        outline: none;
+        transition: all 0.2s;
+    }
+    .auth-input:focus {
+        border-color: #FF6600;
+        background: #FFFFFF;
+        box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.1);
+    }
+    .auth-input::placeholder {
+        color: #94A3B8;
+        font-weight: 500;
+    }
+
+    .pwd-toggle-btn {
+        position: absolute;
+        right: 14px;
+        background: none;
+        border: none;
+        color: #94A3B8;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .terms-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 16px 0 18px;
+        font-size: 12.5px;
+        color: #475569;
+        font-weight: 600;
+    }
+    .terms-box input[type="checkbox"] {
+        accent-color: #FF6600;
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .terms-box a {
+        color: #FF6600;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    /* Submit Button */
+    .btn-create-account {
+        width: 100%;
+        height: 52px;
+        border-radius: 18px;
+        border: none;
+        background: linear-gradient(180deg, #FF7A3D 0%, #F25B12 100%);
+        color: #FFFFFF;
+        font-size: 15px;
+        font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        letter-spacing: 0.6px;
+        cursor: pointer;
+        box-shadow: 0 14px 28px -8px rgba(242, 91, 18, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        transition: transform 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-create-account:active { transform: scale(0.98); }
+
+    /* Footer Info */
+    .auth-footer {
+        text-align: center;
+        padding: 20px 20px 28px;
+        font-size: 13px;
+        color: #64748B;
+    }
+    .auth-footer a {
+        color: #FF6600;
+        font-weight: 800;
+        text-decoration: none;
+    }
+    .auth-security-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        color: #94A3B8;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+    </style>
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+</head>
+<body>
+
+<div class="auth-page">
+
+    <!-- Top Orange Hero Card -->
+    <div class="auth-hero">
+        <h1 class="auth-hero-title">Welcome Back <span data-ic="spark"></span></h1>
+        <p class="auth-hero-subtitle">Login to continue earning rewards</p>
+
+        <div class="auth-hero-tags">
+            <span class="auth-hero-tag"><span data-ic="spark"></span> Instant USDT</span>
+            <span class="auth-hero-tag"><span data-ic="gift"></span> Bonus on Top Up</span>
+        </div>
+    </div>
+
+    <!-- Floating Form Card -->
+    <div class="auth-card-container">
+        <div class="auth-card">
+
+            <!-- Tab Switcher -->
+            <div class="auth-tabs">
+                <a href="login.html" class="auth-tab active">Login</a>
+                <a href="register.html" class="auth-tab">Register</a>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                <!-- Email Address -->
+                <div class="auth-input-row">
+                    <div class="auth-icon-badge" id="authInputBadge"><span data-ic="mail"></span></div>
+                    <input type="email" id="loginEmail" name="email" class="auth-input" placeholder="Enter your Gmail / email" required autocomplete="username">
+                </div>
+
+                <!-- Password -->
+                <div class="auth-input-row">
+                    <div class="auth-icon-badge"><span data-ic="lock"></span></div>
+                    <input type="password" id="loginPassword" name="password" class="auth-input" placeholder="Enter password" required>
+                    <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('loginPassword')"><span data-ic="eye"></span></button>
+                </div>
+
+                <!-- Terms Checkbox -->
+                <label class="terms-box">
+                    <input type="checkbox" name="terms" required checked>
+                    <span>I have read and agree to the <a href="login.html">Terms & Conditions</a></span>
+                </label>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-create-account" id="loginBtn">
+                    LOGIN SECURELY
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Footer Links -->
+    <div class="auth-footer">
+        <div>Don't have an account? <a href="register.html">Register now</a></div>
+        <div class="auth-security-badge">
+            <span data-ic="lock"></span> Bank-grade 256-bit encryption
+        </div>
+    </div>
+
+</div>
+
+<!-- Floating Live Chat Support Launcher Button -->
+<div class="floating-chat-tooltip">Need Help?</div>
+<a href="pages/guest-chat.html" class="floating-chat-btn" title="Live Chat Support">
+    <span data-ic="chat"></span>
+    <span class="notif-dot"></span>
+</a>
+
+<script src="assets/js/app.js"></script>
+<script>
+function togglePasswordVisibility(fieldId) {
+    const f = document.getElementById(fieldId);
+    if (f.type === 'password') {
+        f.type = 'text';
+    } else {
+        f.type = 'password';
+    }
+}
+
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const passVal = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('loginBtn');
+    const origText = btn.textContent;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) { showToast('Please enter your email.', 'error'); return; }
+    if (!emailRegex.test(email)) { showToast('Please enter a valid email address.', 'error'); return; }
+    if (!passVal) { showToast('Please enter your password.', 'error'); return; }
+    if (!tpDB) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'LOGGING IN...';
+
+    try {
+        const emailKey = tpEmailKey(email);
+        const userSnap = await tpRef('users/' + emailKey).once('value');
+        const user = userSnap.val();
+
+        if (!user) {
+            showToast('Account not found. Please register first.', 'error');
+            return;
+        }
+
+        // Admin-controlled account status
+        if (user.status === 'pending') {
+            showToast('Your account is pending admin approval. Please wait.', 'error');
+            return;
+        }
+        if (user.status === 'blocked') {
+            showToast('Your account has been blocked. Contact support via Live Chat.', 'error');
+            return;
+        }
+
+        const hash = await tpHashPassword(passVal);
+        if (!user.password || user.password !== hash) {
+            showToast('Incorrect email or password.', 'error');
+            return;
+        }
+
+        // Create session + remember login
+        const token = tpId();
+        await tpRef('sessions/' + token).set({ email: user.email, emailKey: emailKey, created_at: tpNow() });
+        localStorage.setItem('tp_session_token', token);
+        tpSetSession(user.email, user.full_name);
+
+        await tpRef('users/' + emailKey + '/last_login').set(tpNow());
+
+        showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
+    } catch (e) {
+        showToast('Network error during login. Check Firebase rules/permissions.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+    }
+}
+</script>
+</body>
+
+</html>

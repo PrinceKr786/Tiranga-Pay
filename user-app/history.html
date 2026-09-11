@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Transaction History - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+</head>
+<body>
+
+<div class="app-viewport">
+    <header class="app-header with-bg">
+        <a href="dashboard.html" class="back-btn">&lsaquo;</a>
+        <div class="header-title">History</div>
+        <div style="width: 40px;"></div>
+    </header>
+
+    <div class="app-content" style="padding-top: 16px;">
+
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; background: #F8FAFC; border-radius: 14px; padding: 5px; border: 1px solid var(--border);">
+            <button id="tabLedger" onclick="switchTab('ledger')" style="flex:1; padding:10px; border:none; border-radius:11px; background: var(--primary-gradient); color:#fff; font-size:12px; font-weight:800; cursor:pointer;">Ledger</button>
+            <button id="tabDeposits" onclick="switchTab('deposits')" style="flex:1; padding:10px; border:none; border-radius:11px; background: transparent; color: var(--text-muted); font-size:12px; font-weight:800; cursor:pointer;">Deposits</button>
+            <button id="tabWithdrawals" onclick="switchTab('withdrawals')" style="flex:1; padding:10px; border:none; border-radius:11px; background: transparent; color: var(--text-muted); font-size:12px; font-weight:800; cursor:pointer;">Withdrawals</button>
+        </div>
+
+        <div id="panelLedger">
+            <div style="font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 2px;"><span data-ic="book"></span> Wallet Ledger</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">All wallet credits &amp; debits applied by admin.</div>
+            <div id="ledgerList"><div class="session-item-card">Loading...</div></div>
+        </div>
+
+        <div id="panelDeposits" style="display:none;">
+            <div style="font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 2px;"><span data-ic="receive"></span> Deposit Requests</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Your UPI deposit requests &amp; status.</div>
+            <div id="depositList"><div class="session-item-card">Loading...</div></div>
+        </div>
+
+        <div id="panelWithdrawals" style="display:none;">
+            <div style="font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 2px;"><span data-ic="send"></span> Withdrawal Requests</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Your UPI payout requests &amp; status.</div>
+            <div id="withdrawalList"><div class="session-item-card">Loading...</div></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon" data-ic="home"></span>
+        <span>Home</span>
+    </a>
+    <a href="deposit.html" class="nav-item">
+        <span class="nav-icon" data-ic="receive"></span>
+        <span>Deposit</span>
+    </a>
+    <a href="withdraw.html" class="nav-item">
+        <span class="nav-icon" data-ic="bank"></span>
+        <span>Withdraw</span>
+    </a>
+    <a href="team.html" class="nav-item">
+        <span class="nav-icon" data-ic="users"></span>
+        <span>Team</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon" data-ic="user"></span>
+        <span>Me</span>
+    </a>
+</nav>
+
+<script>
+let currentEmailKey = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    const userSnap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
+    if (!userSnap || !userSnap.val()) { tpClearSession(); window.location.href = 'login.html'; return; }
+
+    loadLedger();
+    loadDeposits();
+    loadWithdrawals();
+});
+
+function switchTab(name) {
+    ['ledger', 'deposits', 'withdrawals'].forEach(t => {
+        document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === name ? 'block' : 'none';
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === name) {
+            btn.style.background = 'var(--primary-gradient)';
+            btn.style.color = '#fff';
+        } else {
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--text-muted)';
+        }
+    });
+}
+
+function statusChip(status) {
+    const st = (status || 'pending').toLowerCase();
+    const map = {
+        pending: ['bg #FEF3C7', 'color #B45309'],
+        approved: ['bg #DCFCE7', 'color #15803D'],
+        completed: ['bg #DCFCE7', 'color #15803D'],
+        paid: ['bg #DBEAFE', 'color #1D4ED8'],
+        rejected: ['bg #FEE2E2', 'color #B91C1C']
+    };
+    const c = map[st];
+    const bg = c ? c[0].split(' ')[1] : '#F1F5F9';
+    const co = c ? c[1].split(' ')[1] : '#64748B';
+    return `<span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; padding:4px 10px; border-radius:99px; background:${bg}; color:${co};">${escapeHtml(status || 'pending')}</span>`;
+}
+
+function fmtAmt(n, plus) {
+    const v = Number(n || 0);
+    const sign = plus ? (v >= 0 ? '+' : '') : '';
+    return sign + '₹' + v.toLocaleString('en-IN');
+}
+
+async function loadLedger() {
+    const list = document.getElementById('ledgerList');
+    try {
+        const snap = await tpRef('wallet_ledger/' + currentEmailKey).once('value');
+        const raw = snap.val() || {};
+        const entries = Object.values(raw).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        if (!entries.length) {
+            list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">No transactions yet.</div>';
+            return;
+        }
+        list.innerHTML = entries.map(t => {
+            const credit = t.type === 'credit';
+            const color = credit ? '#16A34A' : '#DC2626';
+            return `
+            <div class="session-item-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:${credit ? '#DCFCE7' : '#FEE2E2'}; color:${color}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0;">${credit ? '+' : '−'}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:800; color:var(--text);">${escapeHtml(t.reason || (credit ? 'Credit' : 'Debit'))}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${t.created_at ? new Date(t.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:14px; font-weight:800; color:${color};">${credit ? '+' : '−'}₹${Math.abs(Number(t.amount || 0)).toLocaleString('en-IN')}</div>
+                        <div style="font-size:10px; color:var(--text-muted);">Bal: ₹${Number(t.balance_after || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">Ledger not readable (check Firebase rules).</div>';
+    }
+}
+
+async function loadDeposits() {
+    const list = document.getElementById('depositList');
+    try {
+        const snap = await tpRef('deposits/' + currentEmailKey).once('value');
+        const raw = snap.val() || {};
+        const entries = Object.values(raw).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        if (!entries.length) {
+            list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">No deposits yet.</div>';
+            return;
+        }
+        list.innerHTML = entries.map(d => `
+            <div class="session-item-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">${IC_svg('receive')}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:800; color:var(--text);">₹${Number(d.amount || 0).toLocaleString('en-IN')}</div>
+                        <div style="font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(d.upi_ref || '')}">From ${escapeHtml(d.upi_from || '—')}${d.upi_ref ? ' • Ref ' + escapeHtml(d.upi_ref) : ''}</div>
+                        <div style="font-size:10px; color:var(--text-muted);">${d.created_at ? new Date(d.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    </div>
+                    ${statusChip(d.status)}
+                </div>
+            </div>`).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">Deposits not readable (check Firebase rules).</div>';
+    }
+}
+
+async function loadWithdrawals() {
+    const list = document.getElementById('withdrawalList');
+    try {
+        const snap = await tpRef('withdrawals/' + currentEmailKey).once('value');
+        const raw = snap.val() || {};
+        const entries = Object.values(raw).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        if (!entries.length) {
+            list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">No withdrawals yet.</div>';
+            return;
+        }
+        list.innerHTML = entries.map(w => `
+            <div class="session-item-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">${IC_svg('send')}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:800; color:var(--text);">₹${Number(w.amount || 0).toLocaleString('en-IN')}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">To ${escapeHtml(w.upi_to || '—')}</div>
+                        <div style="font-size:10px; color:var(--text-muted);">${w.created_at ? new Date(w.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    </div>
+                    ${statusChip(w.status)}
+                </div>
+            </div>`).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="session-item-card" style="text-align:center; color:var(--text-muted);">Withdrawals not readable (check Firebase rules).</div>';
+    }
+}
+</script>
+</body>
+</html>

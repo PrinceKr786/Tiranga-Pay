@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Chat Support - Tiranga Pay</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+</head>
+<body>
+
+<div class="app-viewport">
+
+    <!-- Header (Screenshot Match) -->
+    <header class="app-header with-bg">
+        <a href="../login.html" class="back-btn">&lsaquo;</a>
+        <div class="header-title">Live Chat</div>
+        <div style="width: 40px;"></div>
+    </header>
+
+    <div class="app-content" style="padding-top: 16px;">
+
+                    <!-- ==================================================
+                 VIEW: GUEST LIVE CHAT START FORM (Match Screenshots)
+                 ================================================== -->
+
+            <!-- Info Box Above Card -->
+            <div class="info-box" style="margin-bottom: 16px;">
+                <div class="info-icon"><span data-ic="chat"></span></div>
+                <div class="info-text">
+                    Chat with our support team in real-time. Enter your details below to start a conversation. Our team typically responds within minutes.
+                </div>
+            </div>
+
+            <!-- Orange Support Card Header -->
+            <div class="guest-chat-hero">
+                <div class="guest-chat-hero-icon"><span data-ic="headset"></span></div>
+                <div>
+                    <div class="guest-chat-hero-title">Need Help?</div>
+                    <div class="guest-chat-hero-sub">Start a live chat with our support team</div>
+                </div>
+            </div>
+
+            <!-- Before You Start Guidelines Box -->
+            <div class="support-info-card">
+                <div class="support-info-title">
+                    <span><span data-ic="clock"></span></span> Before you start:
+                </div>
+                <ul class="support-info-list">
+                    <li><span>•</span> Our support team is available 10:00 – 22:00 IST</li>
+                    <li><span>•</span> Response time is typically under 5 minutes</li>
+                    <li><span>•</span> For urgent issues, email <strong>support@tirangapay.com</strong></li>
+                </ul>
+            </div>
+
+            <!-- Start Chat Form Card -->
+            <div class="form-card">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-weight: 800; font-size: 16px; color: var(--text);">Start Conversation</div>
+                    <a href="guest-chat-sessions.html" style="font-size: 12px; color: var(--primary); font-weight: 700; text-decoration: none;">Your Sessions &rsaquo;</a>
+                </div>
+
+                <!-- Quick Topic Suggestion Pills -->
+                <div class="topic-pills-label">Quick select topic:</div>
+                <div class="topic-pills-grid">
+                    <button type="button" class="topic-pill-btn" data-topic="I forgot my password"><span data-ic="key"></span> Forgot Password</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Login Problem"><span data-ic="lock"></span> Login Issue</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Registration Problem"><span data-ic="pencil"></span> Registration Issue</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Deposit Problem"><span data-ic="wallet"></span> Deposit / Top Up</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Withdrawal Problem"><span data-ic="receive"></span> Withdrawal Issue</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Payment Problem"><span data-ic="upi"></span> Payment Issue</button>
+                    <button type="button" class="topic-pill-btn" data-topic="Other Inquiry"><span data-ic="info"></span> Other</button>
+                </div>
+
+                <!-- Security Warning Box -->
+                <div class="security-warning-box">
+                    <span><span data-ic="lock"></span></span>
+                    <div>Never share your password, OTP, MPIN or banking PIN with support.</div>
+                </div>
+
+                <form id="guestStartChatForm">
+                    <input type="hidden" name="csrf_token" value="">
+                    <div class="input-group">
+                        <div class="input-icon-pill"><span data-ic="user"></span></div>
+                        <input type="text" id="chat_name" name="name" class="input-field" placeholder="Your Name (e.g. John Doe)" required value="">
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-icon-pill"><span data-ic="mail"></span></div>
+                        <input type="email" id="chat_email" name="email" class="input-field" placeholder="Email (e.g. you@email.com)" required value="">
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-icon-pill"><span data-ic="pin"></span></div>
+                        <input type="text" id="chat_subject" name="subject" class="input-field" placeholder="Subject (How can we help?)" required>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 20px;">
+                        <textarea id="chat_message" name="message" class="input-field" placeholder="Describe your issue..." required style="height: 100px; padding: 12px 16px; line-height: 1.4; resize: none;"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        START LIVE CHAT
+                    </button>
+                </form>
+
+            </div>
+
+        
+    </div>
+
+</div>
+
+<!-- Modal Dialog: Guest 2MB File Size Alert -->
+<div class="guest-chat-modal-overlay" id="guestFileSizeModalOverlay">
+    <div class="guest-chat-modal-card">
+        <div style="font-size: 40px; margin-bottom: 8px;"><span data-ic="alert"></span></div>
+        <div style="font-weight: 800; font-size: 17px; color: var(--danger); margin-bottom: 6px;">Image Size Exceeds 2MB</div>
+        <div id="guestFileSizeModalMsg" style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
+            Please select an image under 2 MB.
+        </div>
+        <button type="button" class="btn-primary" onclick="closeGuestFileSizeModal()" style="height: 42px; font-size: 14px;">
+            Understood
+        </button>
+    </div>
+</div>
+
+<!-- Modal Dialog: Guest Image Lightbox View -->
+<div class="guest-chat-modal-overlay" id="guestLightboxOverlay" onclick="closeGuestLightbox()">
+    <div style="position: relative; max-width: 92vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation()">
+        <button type="button" onclick="closeGuestLightbox()" style="position: absolute; top: -14px; right: -14px; background: #DC2626; color: #FFF; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; cursor: pointer; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px;"><span data-ic="close"></span></button>
+        <img id="guestLightboxImg" src="#" alt="Full view" style="max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); background: #0F172A;">
+    </div>
+</div>
+
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/guest-chat.js"></script>
+</body>
+
+</html>

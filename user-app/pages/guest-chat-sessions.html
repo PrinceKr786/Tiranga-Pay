@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Chat Support - Tiranga Pay</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+</head>
+<body>
+
+<div class="app-viewport">
+
+    <!-- Header (Screenshot Match) -->
+    <header class="app-header with-bg">
+        <a href="../login.html" class="back-btn">&lsaquo;</a>
+        <div class="header-title">Live Chat</div>
+        <div style="width: 40px;"></div>
+    </header>
+
+    <div class="app-content" style="padding-top: 16px;">
+
+                    <!-- ==================================================
+                 VIEW: YOUR SESSIONS LIST
+                 ================================================== -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--text);">Your Support Sessions</div>
+                <a href="guest-chat.html" class="btn-outline" style="width: auto; padding: 6px 16px; height: 36px; font-size: 12px;">+ New Chat</a>
+            </div>
+
+            <div id="guestSessionsListContainer">
+                <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading session history...</div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    loadGuestSessionsList();
+                });
+            </script>
+
+        
+    </div>
+
+</div>
+
+<!-- Modal Dialog: Guest 2MB File Size Alert -->
+<div class="guest-chat-modal-overlay" id="guestFileSizeModalOverlay">
+    <div class="guest-chat-modal-card">
+        <div style="font-size: 40px; margin-bottom: 8px;"><span data-ic="alert"></span></div>
+        <div style="font-weight: 800; font-size: 17px; color: var(--danger); margin-bottom: 6px;">Image Size Exceeds 2MB</div>
+        <div id="guestFileSizeModalMsg" style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
+            Please select an image under 2 MB.
+        </div>
+        <button type="button" class="btn-primary" onclick="closeGuestFileSizeModal()" style="height: 42px; font-size: 14px;">
+            Understood
+        </button>
+    </div>
+</div>
+
+<!-- Modal Dialog: Guest Image Lightbox View -->
+<div class="guest-chat-modal-overlay" id="guestLightboxOverlay" onclick="closeGuestLightbox()">
+    <div style="position: relative; max-width: 92vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation()">
+        <button type="button" onclick="closeGuestLightbox()" style="position: absolute; top: -14px; right: -14px; background: #DC2626; color: #FFF; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; cursor: pointer; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px;"><span data-ic="close"></span></button>
+        <img id="guestLightboxImg" src="#" alt="Full view" style="max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); background: #0F172A;">
+    </div>
+</div>
+
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/guest-chat.js"></script>
+</body>
+
+</html>

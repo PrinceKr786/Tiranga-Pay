@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bank Account - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <style>
+    .bank-page {
+        font-family: 'Manrope', sans-serif;
+        color: #1B2430;
+        background: linear-gradient(180deg, #E8EEF6 0%, #DCE6F2 50%, #E9EFF7 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        padding-bottom: 110px;
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .bank-page::before, .bank-page::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .bank-page::before {
+        width: 300px; height: 300px;
+        background: #9DBBE8; opacity: 0.6;
+        top: -80px; left: -100px;
+    }
+    .bank-page::after {
+        width: 280px; height: 280px;
+        background: #FFB98A; opacity: 0.5;
+        top: 260px; right: -120px;
+    }
+    .bank-page > * { position: relative; z-index: 1; }
+
+    /* Sticky glass header */
+    .bank-header {
+        position: sticky; top: 0; z-index: 100;
+        display: flex; gap: 12px; align-items: center;
+        padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 14px;
+        background: rgba(232, 238, 246, 0.7);
+        backdrop-filter: blur(24px) saturate(1.4);
+        -webkit-backdrop-filter: blur(24px) saturate(1.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: 0 8px 24px rgba(60, 80, 120, 0.08);
+    }
+    .bank-header .back-btn-circle {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #fff;
+        box-shadow: 0 6px 14px rgba(60, 80, 120, 0.12);
+        display: flex; align-items: center; justify-content: center;
+        color: #5A6B85; font-size: 16px; font-weight: 700;
+        cursor: pointer; text-decoration: none; flex: none;
+        transition: transform 0.15s;
+    }
+    .bank-header .back-btn-circle:active { transform: scale(0.92); }
+    .bank-header .back-btn-circle svg { width: 18px; height: 18px; }
+    .bank-header .header-title-text {
+        font-family: 'Sora', sans-serif;
+        font-size: 18px; font-weight: 800;
+        letter-spacing: -0.3px; color: #1B2430; margin: 0;
+    }
+
+    .bank-content { padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Glass card */
+    .b-glass {
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.12), inset 0 1px 0 #fff;
+        border-radius: 24px;
+        padding: 20px;
+    }
+
+    /* Lock Alert Banner */
+    .b-lock-alert {
+        background: linear-gradient(135deg, rgba(254, 243, 199, 0.9), rgba(253, 230, 138, 0.8));
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+    .b-lock-alert-icon {
+        width: 32px; height: 32px;
+        border-radius: 10px;
+        background: #F59E0B;
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .b-lock-alert-icon svg { width: 16px; height: 16px; }
+    .b-lock-alert-text {
+        font-size: 12px;
+        color: #92400E;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
+    /* Form Fields */
+    .b-field-wrap { margin-bottom: 14px; position: relative; }
+    .b-field-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: #7A8AA3;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .b-input-group { position: relative; }
+    .b-input-group input {
+        width: 100%; height: 50px;
+        border-radius: 14px;
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #1B2430;
+        padding: 0 16px 0 50px;
+        font-size: 14px; font-family: 'Sora', sans-serif; font-weight: 700;
+        outline: none;
+        box-shadow: 0 8px 22px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .b-input-group input:focus {
+        border-color: #FF7A3D;
+        box-shadow: 0 8px 22px rgba(242, 91, 18, 0.25), inset 0 1px 0 #fff;
+    }
+    .b-input-group input:read-only, .b-input-group input:disabled {
+        background: rgba(241, 245, 249, 0.7);
+        color: #475569;
+        cursor: not-allowed;
+    }
+    .b-input-icon {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        width: 30px; height: 30px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #FF7A3D, #F25B12);
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 10px rgba(242, 91, 18, 0.3);
+        pointer-events: none;
+    }
+    .b-input-icon svg { width: 15px; height: 15px; }
+    .b-input-icon.locked {
+        background: #94A3B8;
+        box-shadow: 0 4px 10px rgba(148, 163, 184, 0.3);
+    }
+
+    /* Buttons */
+    .b-submit-btn {
+        width: 100%; height: 50px;
+        border-radius: 15px; border: none;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff;
+        font-size: 14px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: 0 16px 30px -10px rgba(242, 91, 18, 0.6), inset 0 1.5px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+        margin-top: 6px;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none;
+    }
+    .b-submit-btn:active { transform: scale(0.98); }
+
+    .b-contact-btn {
+        width: 100%; height: 50px;
+        border-radius: 15px; border: 1.5px solid #FF7A3D;
+        background: rgba(255, 122, 61, 0.1);
+        color: #F25B12;
+        font-size: 14px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        text-decoration: none;
+        transition: transform 0.15s;
+        margin-top: 6px;
+    }
+    .b-contact-btn:active { transform: scale(0.98); }
+
+    /* View card for saved bank details */
+    .b-view-card { border-radius: 24px; padding: 20px; overflow: hidden; }
+    .b-view-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(122, 138, 163, 0.25); }
+    .b-view-row:last-child { border-bottom: none; }
+    .b-view-label { font-size: 11px; font-weight: 800; color: #7A8AA3; text-transform: uppercase; letter-spacing: 0.8px; width: 92px; flex: none; padding-top: 2px; }
+    .b-view-value { font-size: 14px; font-weight: 700; color: #1B2430; font-family: 'Sora', sans-serif; word-break: break-word; }
+    .b-view-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 800; font-family: 'Sora', sans-serif;
+        padding: 6px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.6px;
+        color: #2E9A6B; background: rgba(46, 154, 107, 0.14); border: 1px solid rgba(46, 154, 107, 0.3);
+        margin-bottom: 14px;
+    }
+    .b-view-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    </style>
+</head>
+<body>
+
+<div class="bank-page">
+
+    <!-- Header -->
+    <nav class="bank-header">
+        <a href="withdraw.html" class="back-btn-circle"><span data-ic="back"></span></a>
+        <h3 class="header-title-text">Bank Account Details</h3>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="bank-content">
+
+        <div class="b-glass" id="bSaveCard">
+
+            <div class="b-lock-alert">
+                <div class="b-lock-alert-icon"><span data-ic="lock"></span></div>
+                <div class="b-lock-alert-text">
+                    Your bank/UPI details are encrypted and locked after saving. They can only be changed by the Support Team or Admin for your security.
+                </div>
+            </div>
+
+            <h3 style="font-family:'Sora',sans-serif; font-size:16px; font-weight:800; margin:0 0 16px; color:#1B2430;">
+                <span data-ic="bank" style="vertical-align:-3px; margin-right:6px;"></span>Link Bank Account
+            </h3>
+
+            <form id="bankForm" onsubmit="event.preventDefault(); saveBankDetails();">
+                <div class="b-field-wrap">
+                    <label class="b-field-label">Account Holder Full Name</label>
+                    <div class="b-input-group">
+                        <div class="b-input-icon"><span data-ic="user"></span></div>
+                        <input type="text" id="account_holder" placeholder="Account Holder Full Name" required>
+                    </div>
+                </div>
+
+                <div class="b-field-wrap">
+                    <label class="b-field-label">Bank Name</label>
+                    <div class="b-input-group">
+                        <div class="b-input-icon"><span data-ic="bank"></span></div>
+                        <input type="text" id="bank_name" placeholder="Bank Name (e.g. State Bank of India)" required>
+                    </div>
+                </div>
+
+                <div class="b-field-wrap">
+                    <label class="b-field-label">Bank Account Number</label>
+                    <div class="b-input-group">
+                        <div class="b-input-icon"><span data-ic="key"></span></div>
+                        <input type="text" id="account_number" placeholder="Enter Account Number" pattern="[0-9]{9,18}" title="Enter a valid bank account number (9-18 digits)" required>
+                    </div>
+                </div>
+
+                <div class="b-field-wrap">
+                    <label class="b-field-label">IFSC Code</label>
+                    <div class="b-input-group">
+                        <div class="b-input-icon"><span data-ic="pin"></span></div>
+                        <input type="text" id="ifsc_code" placeholder="IFSC Code (e.g. SBIN0001234)" style="text-transform: uppercase;" required>
+                    </div>
+                </div>
+
+                <div class="b-field-wrap">
+                    <label class="b-field-label">UPI ID (Optional)</label>
+                    <div class="b-input-group">
+                        <div class="b-input-icon"><span data-ic="upi"></span></div>
+                        <input type="text" id="upi_id" placeholder="UPI ID (optional)">
+                    </div>
+                </div>
+
+                <button type="submit" class="b-submit-btn" id="bankSaveBtn">
+                    SAVE BANK DETAILS
+                </button>
+            </form>
+
+        </div>
+
+        <!-- Saved Bank Details (view mode when already saved) -->
+        <div class="b-glass b-view-card" id="bViewCard" style="display:none;">
+            <span class="b-view-status"><span class="dot"></span> Bank Linked</span>
+            <div id="bViewRows"></div>
+            <button type="button" class="b-contact-btn" id="bEditBtn">
+                <span data-ic="pencil"></span> EDIT BANK DETAILS
+            </button>
+        </div>
+
+        <!-- Guidelines & How It Works Section -->
+        <div class="form-card guidelines-card" style="margin-top: 0; padding: 18px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E4EA F1; border: 1px solid rgba(27,36,48,0.08); box-shadow: 0 10px 30px rgba(60,80,120,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleGuidelines(this)">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0DF; color: #F25B12; display: flex; align-items: center; justify-content: center;"><span data-ic="book"></span></div>
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; color: #1B2430;">Bank Account Binding Guidelines</div>
+                        <div style="font-size: 11px; color: #7A8AA3; font-weight: 600;">Step-by-step guide &amp; how it works</div>
+                    </div>
+                </div>
+                <span class="guidelines-arrow" style="font-size: 16px; color: #F25B12; transition: transform 0.3s; font-weight: 800;">&#9660;</span>
+            </div>
+            <div class="guidelines-content" style="display: block; margin-top: 14px; border-top: 1px dashed rgba(27,36,48,0.15); padding-top: 14px;">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #FF7A3D, #F25B12); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">1</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 700; color: #1B2430;">Name Matching Security Requirement</div>
+                        <div style="font-size: 12px; color: #7A8AA3; margin-top: 2px; line-height: 1.45;">The Account Holder Full Name must match your registered account identity to ensure successful bank payout verification.</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #FF7A3D, #F25B12); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">2</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 700; color: #1B2430;">Verify Account Number &amp; IFSC Code</div>
+                        <div style="font-size: 12px; color: #7A8AA3; margin-top: 2px; line-height: 1.45;">Double-check your IFSC code and bank account number before saving to prevent payout delays or rejections.</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #FF7A3D, #F25B12); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">3</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 700; color: #1B2430;">Permanent Security Lock</div>
+                        <div style="font-size: 12px; color: #7A8AA3; margin-top: 2px; line-height: 1.45;">Once saved, bank details are locked and protected with high-level encryption. They can only be modified by the Support Team or Admin.</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #FF7A3D, #F25B12); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">4</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 700; color: #1B2430;">Fast Payout Processing</div>
+                        <div style="font-size: 12px; color: #7A8AA3; margin-top: 2px; line-height: 1.45;">Withdrawals are transferred directly into your verified bank account via IMPS/NEFT with real-time status updates.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon" data-ic="home"></span>
+        <span>Home</span>
+    </a>
+    <a href="deposit.html" class="nav-item">
+        <span class="nav-icon" data-ic="receive"></span>
+        <span>Deposit</span>
+    </a>
+    <a href="withdraw.html" class="nav-item active">
+        <span class="nav-icon" data-ic="bank"></span>
+        <span>Withdraw</span>
+    </a>
+    <a href="team.html" class="nav-item">
+        <span class="nav-icon" data-ic="users"></span>
+        <span>Team</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon" data-ic="user"></span>
+        <span>Me</span>
+    </a>
+</nav>
+
+<script>
+/* ================= Firebase wiring ================= */
+let currentEmailKey = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    applyIcons();
+    loadBankDetails();
+});
+
+async function loadBankDetails() {
+    try {
+        const snap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
+        const u = snap && snap.val();
+        if (!u) { tpClearSession(); window.location.href = 'login.html'; return; }
+
+        const saved = (u.account_number || '').trim();
+        if (saved) {
+            renderViewMode(u);
+        } else {
+            document.getElementById('account_holder').value = u.full_name || '';
+        }
+    } catch (e) {
+        showToast('Failed to load bank details. Check Firebase rules.', 'error');
+    }
+}
+
+function renderViewMode(u) {
+    document.getElementById('bSaveCard').style.display = 'none';
+    document.getElementById('bViewCard').style.display = 'block';
+
+    const rows = [
+        ['Account Holder', u.account_holder || '—'],
+        ['Bank Name', u.bank_name || '—'],
+        ['Account Number', maskAccount(u.account_number || '—')],
+        ['IFSC Code', u.ifsc_code || '—'],
+        ['UPI ID', u.upi_id || '—']
+    ];
+    document.getElementById('bViewRows').innerHTML = rows.map(r => `
+        <div class="b-view-row">
+            <div class="b-view-label">${escapeHtml(r[0])}</div>
+            <div class="b-view-value">${escapeHtml(r[1])}</div>
+        </div>`).join('');
+
+    document.getElementById('bEditBtn').onclick = () => {
+        document.getElementById('account_holder').value = u.account_holder || '';
+        document.getElementById('bank_name').value = u.bank_name || '';
+        document.getElementById('account_number').value = u.account_number || '';
+        document.getElementById('ifsc_code').value = u.ifsc_code || '';
+        document.getElementById('upi_id').value = u.upi_id || '';
+        document.getElementById('bViewCard').style.display = 'none';
+        document.getElementById('bSaveCard').style.display = 'block';
+    };
+    applyIcons();
+}
+
+function maskAccount(num) {
+    const digits = String(num).replace(/\D/g, '');
+    if (digits.length <= 4) return String(num);
+    return '••••' + digits.slice(-4);
+}
+
+async function saveBankDetails() {
+    if (!tpDB) { showToast('Firebase not connected.', 'error'); return; }
+
+    const holder = document.getElementById('account_holder').value.trim();
+    const bank = document.getElementById('bank_name').value.trim();
+    const acc = document.getElementById('account_number').value.replace(/\s+/g, '');
+    const ifsc = document.getElementById('ifsc_code').value.trim().toUpperCase();
+    const upi = document.getElementById('upi_id').value.trim();
+
+    if (!holder) { showToast('Enter account holder full name.', 'error'); return; }
+    if (!bank) { showToast('Enter bank name.', 'error'); return; }
+    if (!/^\d{9,18}$/.test(acc)) { showToast('Enter a valid account number (9-18 digits).', 'error'); return; }
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) { showToast('Enter a valid IFSC code (e.g. SBIN0001234).', 'error'); return; }
+    if (upi && !/@/.test(upi)) { showToast('Enter a valid UPI ID (e.g. name@upi).', 'error'); return; }
+
+    const btn = document.getElementById('bankSaveBtn');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'SAVING...';
+
+    try {
+        await tpRef('users/' + currentEmailKey).update({
+            account_holder: holder,
+            bank_name: bank,
+            account_number: acc,
+            ifsc_code: ifsc,
+            upi_id: upi,
+            bank_saved_at: tpNow()
+        });
+        showToast('Bank details saved successfully!', 'success');
+        setTimeout(() => location.reload(), 1000);
+    } catch (e) {
+        showToast('Failed to save. Check Firebase rules.', 'error');
+        btn.disabled = false;
+        btn.textContent = orig;
+    }
+}
+
+function toggleGuidelines(el) {
+    const content = el.parentElement.querySelector('.guidelines-content');
+    const arrow = el.querySelector('.guidelines-arrow');
+    if (!content) return;
+    const hidden = content.style.display === 'none';
+    content.style.display = hidden ? 'block' : 'none';
+    if (arrow) arrow.style.transform = hidden ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+</script>
+</body>
+</html>

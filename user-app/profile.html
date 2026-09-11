@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profile - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+</head>
+<body>
+
+<div class="app-viewport">
+
+    <!-- Header -->
+    <header class="app-header">
+        <a href="dashboard.html" class="back-btn">&lsaquo;</a>
+        <div class="header-title">Profile</div>
+        <div style="width: 38px;"></div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="app-content">
+
+        <!-- ==================================================== -->
+        <!-- NORMAL USER PROFILE INTERFACE                       -->
+        <!-- ==================================================== -->
+        <div style="background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%); border-radius: 24px; padding: 24px 22px; color: #FFFFFF; position: relative; overflow: hidden; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(255, 102, 0, 0.3);">
+            <div style="position: absolute; right: -30px; bottom: -30px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.12); pointer-events: none;"></div>
+            <div style="position: absolute; right: 40px; bottom: -60px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.08); pointer-events: none;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.5px;">Tiranga Pay</div>
+                <div style="font-size: 20px; opacity: 0.9;">•)))</div>
+            </div>
+
+            <div style="width: 42px; height: 32px; background: linear-gradient(135deg, #FCD34D, #F59E0B); border-radius: 6px; border: 1px solid rgba(255,255,255,0.5); margin-bottom: 16px; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,0.2);"></div>
+                <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.2);"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px;">
+                <div>
+                    <div style="font-size: 11px; font-weight: 800; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px;">QUOTA</div>
+                    <div style="font-size: 28px; font-weight: 800; margin-top: 2px;" data-wallet-balance>0 <span style="font-size: 14px; font-weight: 700;">INR</span></div>
+                    <div style="font-size: 11px; opacity: 0.9; margin-top: 2px;">Reward ratio 8%</div>
+                </div>
+                <a href="deposit.html" style="background: #FFFFFF; color: #FF6600; font-size: 14px; font-weight: 800; padding: 10px 22px; border-radius: 20px; text-decoration: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    Top up
+                </a>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.6px; opacity: 0.9;" data-profile-name>—</div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; opacity: 0.75; margin-top: 2px; word-break: break-all;" data-profile-email>—</div>
+            <div style="font-size: 16px; font-weight: 800; letter-spacing: 2px; opacity: 0.95; margin-top: 6px;" data-profile-code>————</div>
+        </div>
+
+        <!-- 4 Quick Access Grid Buttons -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+            <a href="deposit.html" style="background: #FFFFFF; border-radius: 18px; padding: 16px 8px; text-align: center; text-decoration: none; box-shadow: var(--card-shadow); border: 1px solid #E2E8F0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="arrowIn"></span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #1E293B;">Recharge</div>
+            </a>
+            <a href="withdraw.html" style="background: #FFFFFF; border-radius: 18px; padding: 16px 8px; text-align: center; text-decoration: none; box-shadow: var(--card-shadow); border: 1px solid #E2E8F0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="wallet"></span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #1E293B;">Withdraw</div>
+            </a>
+            <a href="history.html" style="background: #FFFFFF; border-radius: 18px; padding: 16px 8px; text-align: center; text-decoration: none; box-shadow: var(--card-shadow); border: 1px solid #E2E8F0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="clock"></span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #1E293B;">History</div>
+            </a>
+            <a href="pages/guest-chat.html" style="background: #FFFFFF; border-radius: 18px; padding: 16px 8px; text-align: center; text-decoration: none; box-shadow: var(--card-shadow); border: 1px solid #E2E8F0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="chat"></span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #1E293B;">Contact Us</div>
+            </a>
+        </div>
+
+        <!-- Clean Menu List Container -->
+        <div style="background: #FFFFFF; border-radius: 24px; padding: 6px 20px; box-shadow: var(--card-shadow); border: 1px solid #E2E8F0; margin-bottom: 24px;">
+
+            <a href="dashboard.html" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="trophy"></span></div>
+                    <div>
+                        <span style="font-size: 15px; font-weight: 800; color: #1E293B;">Task Rewards</span>
+                        <div style="font-size: 11px; font-weight: 700; color: #FF6600;">Newbie, Team Growth & Daily Tasks</div>
+                    </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #FF6600; color: #fff; padding: 4px 10px; border-radius: 6px;">Hot &rsaquo;</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="showToast('App download coming soon!', 'info')" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="phone"></span></div>
+                    <div>
+                        <span style="font-size: 15px; font-weight: 800; color: #1E293B;">Download TirangaPay App</span>
+                        <div style="font-size: 11px; font-weight: 700; color: #FF6600;">Get Official Android APK App</div>
+                    </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #FFF0E6; color: #FF6600; padding: 4px 8px; border-radius: 6px;">APK &rsaquo;</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="editUpi()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 16px;"><span data-ic="user"></span></div>
+                    <span style="font-size: 15px; font-weight: 700; color: #1E293B;">Edit Profile / Bank</span>
+                </div>
+                <span style="font-size: 16px; color: #CBD5E1;">&rsaquo;</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="setMpin()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 16px;"><span data-ic="key"></span></div>
+                    <span style="font-size: 15px; font-weight: 700; color: #1E293B;">Transaction MPIN</span>
+                </div>
+                <span style="font-size: 16px; color: #CBD5E1;">&rsaquo;</span>
+            </a>
+
+            <a href="pages/guest-chat.html" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 16px;"><span data-ic="mail"></span></div>
+                    <span style="font-size: 15px; font-weight: 700; color: #1E293B;">Contact Us</span>
+                </div>
+                <span style="font-size: 16px; color: #CBD5E1;">&rsaquo;</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="logoutUser()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; text-decoration: none; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 36px; height: 36px; border-radius: 12px; background: #FEE2E2; color: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 16px;"><span data-ic="logout"></span></div>
+                    <span style="font-size: 15px; font-weight: 800; color: #EF4444;">Log Out</span>
+                </div>
+                <span style="font-size: 16px; color: #EF4444;">&rsaquo;</span>
+            </a>
+
+        </div>
+
+        <!-- Guidelines Section -->
+        <div style="margin-top: 14px; margin-bottom: 16px;">
+            <div class="form-card guidelines-card" style="padding: 18px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid var(--border); box-shadow: var(--card-shadow);"><div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleGuidelines(this)">  <div style="display: flex; align-items: center; gap: 12px;">    <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0DF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;"><span data-ic="book"></span></div>    <div>      <div style="font-size: 15px; font-weight: 800; color: var(--text);">Profile Account &amp; Security Guidelines</div>      <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Step-by-step guide & how it works</div>    </div>  </div>  <span class="guidelines-arrow" style="font-size: 16px; color: var(--primary); transition: transform 0.3s; font-weight: 800;">&#9660;</span></div><div class="guidelines-content" style="display: block; margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;"><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">1</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Profile Account &amp; Identification</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Your profile displays your registered email, full name, unique referral code, and live wallet balances.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">2</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Link Your UPI ID for Withdrawals</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Add your UPI ID under Edit Profile / Bank so withdrawals can be paid out directly to your account.</div>  </div></div><div style="display: flex; gap: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">3</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Transaction MPIN &amp; Security</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Set your 6-digit MPIN for transaction security &amp; keep your password private — shares ke liye login na dein.</div>  </div></div></div></div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">
+            <span class="nav-icon" data-ic="home"></span>
+            <span>Home</span>
+        </a>
+        <a href="deposit.html" class="nav-item">
+            <span class="nav-icon" data-ic="receive"></span>
+            <span>Deposit</span>
+        </a>
+        <a href="withdraw.html" class="nav-item">
+            <span class="nav-icon" data-ic="bank"></span>
+            <span>Withdraw</span>
+        </a>
+        <a href="team.html" class="nav-item">
+            <span class="nav-icon" data-ic="users"></span>
+            <span>Team</span>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <span class="nav-icon" data-ic="user"></span>
+            <span>Me</span>
+        </a>
+    </nav>
+
+</div>
+
+<script>
+let currentEmailKey = '';
+let myReferralCode = '';
+let myReferralLink = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    const snap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
+    const u = snap && snap.val();
+    if (!u) { tpClearSession(); window.location.href = 'login.html'; return; }
+
+    myReferralCode = u.referral_code || '';
+    myReferralLink = new URL('register.html?ref=' + encodeURIComponent(myReferralCode), window.location.href).href;
+
+    const wallet = Number(u.wallet || 0);
+    document.querySelector('[data-wallet-balance]').innerHTML = wallet.toLocaleString('en-IN') + ' <span style="font-size: 14px; font-weight: 700;">INR</span>';
+    document.querySelector('[data-profile-name]').textContent = (u.full_name || 'User');
+    document.querySelector('[data-profile-email]').textContent = session.email;
+    document.querySelector('[data-profile-code]').textContent = myReferralCode || '—';
+    document.querySelector('[data-profile-code]').title = 'Tap to copy referral code';
+    if (myReferralCode) document.querySelector('[data-profile-code]').style.cursor = 'pointer';
+    document.querySelector('[data-profile-code]').onclick = () => { if (myReferralCode) copyText(myReferralCode); };
+});
+
+async function tpHashMpin(mpin) {
+    const data = new TextEncoder().encode('tp-mpin-' + String(mpin));
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function copyReferral(type) {
+    copyText(type === 'code' ? myReferralCode : myReferralLink);
+}
+
+async function editUpi() {
+    const snap = await tpRef('users/' + currentEmailKey + '/upi_id').once('value').catch(() => null);
+    const cur = (snap && snap.val()) || '';
+    const val = window.prompt('Enter your UPI ID (e.g. name@upi)\nCurrent: ' + (cur || 'Not set'), cur);
+    if (val === null) return;
+    const upi = val.trim();
+    if (!upi) { showToast('UPI ID cannot be empty', 'error'); return; }
+    try {
+        await tpRef('users/' + currentEmailKey).update({ upi_id: upi });
+        showToast('UPI ID saved!', 'success');
+    } catch (e) { showToast('Failed to save UPI ID', 'error'); }
+}
+
+async function setMpin() {
+    const pin1 = window.prompt('Set your 6-digit Transaction MPIN:');
+    if (pin1 === null) return;
+    if (!/^\d{6}$/.test(String(pin1).trim())) { showToast('MPIN must be exactly 6 digits', 'error'); return; }
+    const pin2 = window.prompt('Confirm your 6-digit MPIN:');
+    if (pin2 === null) return;
+    if (String(pin1).trim() !== String(pin2).trim()) { showToast('MPIN does not match', 'error'); return; }
+    try {
+        const hash = await tpHashMpin(String(pin1).trim());
+        await tpRef('users/' + currentEmailKey).update({ mpin: hash });
+        showToast('MPIN updated successfully!', 'success');
+    } catch (e) { showToast('Failed to update MPIN', 'error'); }
+}
+
+function logoutUser() {
+    const s = tpGetSession();
+    if (s.token) tpRef('sessions/' + s.token).remove().catch(() => {});
+    tpClearSession();
+    window.location.href = 'login.html';
+}
+</script>
+</body>
+</html>

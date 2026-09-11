@@ -1,0 +1,1222 @@
+/* ==========================================================================
+   TIRANGA PAY - ULTRA-PREMIUM SAFFRON MOBILE-FIRST STYLESHEET
+   Beautiful Floating Rounded Header & Zero-Clipping Mobile Architecture
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS VARIABLES & THEME TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+  --saffron-50: #FFF7ED;
+  --saffron-100: #FFEDD5;
+  --saffron-200: #FED7AA;
+  --saffron-300: #FDBA74;
+  --saffron-400: #FB923C;
+  --saffron-500: #FF6A00;
+  --saffron-600: #EA580C;
+  --saffron-700: #C2410C;
+  --saffron-800: #9A3412;
+  
+  --primary: #FF6A00;
+  --primary-light: #FF8533;
+  --primary-dark: #E65100;
+  --primary-gradient: linear-gradient(135deg, #FF8533 0%, #FF6A00 50%, #EA580C 100%);
+  --primary-glow: rgba(255, 106, 0, 0.35);
+  
+  --accent-gold: #F59E0B;
+  --accent-emerald: #10B981;
+  --accent-red: #E11D48;
+  
+  /* Backgrounds */
+  --bg-page: #FFFBF5;
+  --bg-page-gradient: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 22%, #FDF8F0 55%, #FFF5EB 100%);
+  --bg-card-white: #FFFFFF;
+  --bg-card-subtle: #FFFDF9;
+  
+  /* Text */
+  --text-main: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-saffron: #EA580C;
+  
+  /* Borders & Shadows */
+  --border-card: #F1E5D8;
+  --border-saffron: #FDBA74;
+  --radius-header: 22px;
+  --radius-card: 22px;
+  --radius-inner: 14px;
+  
+  --shadow-sm: 0 2px 10px rgba(234, 88, 12, 0.06);
+  --shadow-md: 0 10px 30px rgba(234, 88, 12, 0.12);
+  --shadow-header: 0 12px 30px -5px rgba(234, 88, 12, 0.35);
+  --shadow-glow: 0 8px 25px rgba(255, 106, 0, 0.4);
+  
+  /* Fonts */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL RESETS & BASE STYLES
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page-gradient);
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  line-height: 1.55;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: 120px; /* Safe space so sticky bottom bar never overlaps content */
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   3. BEAUTIFUL FLOATING ROUNDED HEADER
+   -------------------------------------------------------------------------- */
+.header-wrapper {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 10px 14px 4px 14px;
+}
+
+.top-header {
+  max-width: 720px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #FF7B1A 0%, #FF6A00 50%, #EA580C 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-header);
+  box-shadow: var(--shadow-header);
+  padding: 12px 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.top-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.25) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.header-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.header-brand-logo {
+  height: 48px;
+  width: auto;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+  object-fit: contain;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.header-brand-logo:hover {
+  transform: scale(1.04);
+}
+
+.header-brand-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header-brand-info h2,
+.header-brand-info .header-brand-name {
+  font-size: clamp(1.05rem, 3.8vw, 1.25rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.header-brand-info p {
+  font-size: clamp(0.65rem, 2.2vw, 0.74rem);
+  opacity: 0.94;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.header-badge-secured {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: clamp(0.66rem, 2.2vw, 0.75rem);
+  font-weight: 800;
+  color: #FFFFFF;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.header-badge-secured svg {
+  width: 14px;
+  height: 14px;
+  fill: #FACC15;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .header-wrapper { padding: 6px 8px 2px 8px; }
+  .top-header { padding: 8px 12px; border-radius: 18px; }
+  .header-brand-wrap { gap: 8px; }
+  .header-brand-logo { height: 38px; }
+  .header-brand-info p { font-size: 0.64rem; }
+  .header-badge-secured { padding: 4px 8px; gap: 4px; font-size: 0.65rem; }
+}
+
+@media (max-width: 350px) {
+  .header-brand-info p { display: none; }
+  .header-brand-logo { height: 34px; }
+  .header-brand-info h2,
+  .header-brand-info .header-brand-name { font-size: 0.95rem; }
+  .header-badge-secured { font-size: 0.6rem; padding: 3px 6px; }
+}
+
+/* --------------------------------------------------------------------------
+   4. FLOATING SOCIAL SIDEBAR (Non-Overlapping on Mobile)
+   -------------------------------------------------------------------------- */
+.floating-social-bar {
+  position: fixed;
+  right: 14px;
+  top: 35%;
+  transform: translateY(-50%);
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.floating-social-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.floating-social-btn:hover {
+  transform: scale(1.1) translateX(-3px);
+}
+
+.social-whatsapp { background: #25D366; }
+.social-telegram { background: #0088CC; }
+.social-instagram {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+.social-facebook { background: #1877F2; }
+
+.floating-social-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+/* On Mobile Screens: Anchored neatly above bottom conversion bar without blocking content */
+@media (max-width: 768px) {
+  .floating-social-bar {
+    top: auto;
+    bottom: 90px;
+    right: 6px;
+    transform: none;
+    flex-direction: column-reverse;
+    gap: 4px;
+    z-index: 990;
+  }
+
+  .floating-social-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    opacity: 0.88;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .floating-social-btn:hover,
+  .floating-social-btn:active {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  .floating-social-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. HERO SECTION & SMARTPHONE MOCKUP (No Cutting / Zero Clipping)
+   -------------------------------------------------------------------------- */
+.app-hero-section {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 14px 16px 14px;
+  text-align: center;
+  position: relative;
+}
+
+.hero-main-title {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: var(--saffron-600);
+  line-height: 1.25;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.hero-sub-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 480px) {
+  .hero-main-title { font-size: 1.6rem; }
+  .hero-sub-title { font-size: 0.98rem; margin-bottom: 14px; }
+}
+
+/* Clean Wrapping Hero Feature Badges (Never cut off) */
+.hero-badges-strip-mobile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.hero-badge-pill {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-saffron);
+  border-radius: 30px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--saffron-600);
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 360px) {
+  .hero-badge-pill { font-size: 0.7rem; padding: 4px 10px; }
+}
+
+/* Smartphone Mockup Frame */
+.mockup-scene-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  margin: 0 auto 24px auto;
+  display: flex;
+  justify-content: center;
+}
+
+.smartphone-frame {
+  width: 100%;
+  max-width: 324px;
+  background: #0B0F19;
+  border-radius: 36px;
+  padding: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22), 0 0 0 2px #334155;
+  position: relative;
+  box-sizing: border-box;
+  display: block;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden;
+}
+
+.smartphone-frame:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 60px rgba(255, 106, 0, 0.25), 0 0 0 2px var(--saffron-500);
+}
+
+.smartphone-screen-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 28px;
+  object-fit: cover;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  background: #F8FAFC;
+}
+
+@media (max-width: 360px) {
+  .smartphone-frame {
+    max-width: 290px;
+    border-radius: 30px;
+    padding: 6px;
+  }
+  .smartphone-screen-img {
+    border-radius: 24px;
+  }
+}
+
+.tab-active {
+  color: var(--saffron-600);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   6. COOPERATION GRID
+   -------------------------------------------------------------------------- */
+.cooperation-section {
+  max-width: 720px;
+  margin: 0 auto 24px auto;
+  padding: 0 14px;
+}
+
+.cooperation-box {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-saffron);
+  border-radius: var(--radius-card);
+  padding: 22px 14px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.cooperation-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--saffron-600);
+  margin-bottom: 18px;
+}
+
+.cooperation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 360px) {
+  .cooperation-grid {
+    gap: 6px;
+  }
+}
+
+.partner-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-inner);
+  padding: 12px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #1E293B;
+  min-height: 50px;
+  text-align: center;
+  line-height: 1.2;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.partner-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--saffron-500);
+}
+
+.brand-freecharge { color: #F15A24; font-size: 0.74rem; }
+.brand-bharatpe { color: #005072; }
+.brand-mobikwik { color: #1565C0; font-size: 0.76rem; }
+.brand-paytm { color: #00BAF2; }
+.brand-phonepe { color: #5F259F; }
+.brand-gpay { color: #4285F4; }
+.brand-more { color: #64748B; font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   7. SECURITY & TRUST SHIELD
+   -------------------------------------------------------------------------- */
+.security-shield-section {
+  max-width: 720px;
+  margin: 0 auto 30px auto;
+  padding: 0 14px;
+  text-align: center;
+}
+
+.shield-scene-box {
+  background: radial-gradient(circle at 50% 50%, rgba(254, 215, 170, 0.4) 0%, rgba(255, 251, 245, 0) 70%);
+  padding: 24px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: var(--radius-card);
+}
+
+.shield-graphic-wrap {
+  position: relative;
+  width: 120px;
+  height: 135px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shield-saffron {
+  width: 110px;
+  height: 125px;
+  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+  clip-path: polygon(50% 0%, 100% 20%, 100% 75%, 50% 100%, 0% 75%, 0% 20%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px rgba(234, 88, 12, 0.35);
+}
+
+.shield-saffron-inner {
+  width: 90px;
+  height: 105px;
+  background: linear-gradient(135deg, #FF6A00 0%, #C2410C 100%);
+  clip-path: polygon(50% 0%, 100% 20%, 100% 75%, 50% 100%, 0% 75%, 0% 20%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shield-check-icon {
+  width: 44px;
+  height: 44px;
+  color: #FFFFFF;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+}
+
+.shield-callouts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.shield-callout-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-inner);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.shield-callout-card span:first-child { color: #1E293B; font-style: italic; }
+.shield-callout-card span:last-child { color: var(--saffron-600); }
+
+/* --------------------------------------------------------------------------
+   8. COMPARISON SECTION ("Why Choose Tiranga Pay?")
+   -------------------------------------------------------------------------- */
+.comparison-section {
+  max-width: 720px;
+  margin: 0 auto 24px auto;
+  padding: 0 14px;
+}
+
+.comparison-box-main {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-saffron);
+  border-radius: var(--radius-card);
+  padding: 24px 16px;
+  box-shadow: var(--shadow-md);
+  box-sizing: border-box;
+}
+
+.comp-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.comp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--saffron-100);
+  border: 1px solid var(--border-saffron);
+  color: var(--saffron-700);
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.comp-title {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: var(--saffron-600);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.comp-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.table-scroll-hint {
+  font-size: 0.72rem;
+  color: var(--saffron-600);
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-align: right;
+  display: block;
+}
+
+.comparison-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+  border-radius: var(--radius-inner);
+  border: 1px solid var(--border-card);
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.comparison-table th {
+  padding: 10px 6px;
+  font-weight: 800;
+  border-bottom: 2px solid var(--border-card);
+  background: #F8FAFC;
+  white-space: nowrap;
+}
+
+.comparison-table th.col-tiranga {
+  background: var(--saffron-500);
+  color: #FFFFFF;
+  position: relative;
+  font-size: 0.84rem;
+}
+
+.comparison-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #F1F5F9;
+  color: var(--text-secondary);
+}
+
+.comparison-table td.col-feature {
+  text-align: left;
+  font-weight: 700;
+  color: #1E293B;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.comparison-table td.col-tiranga {
+  background: rgba(255, 247, 237, 0.8);
+  font-weight: 800;
+  color: var(--saffron-700);
+  border-left: 1.5px solid var(--border-saffron);
+  border-right: 1.5px solid var(--border-saffron);
+  white-space: nowrap;
+}
+
+.check-icon-green {
+  color: #10B981;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.neutral-tag {
+  font-size: 0.7rem;
+  color: #64748B;
+  background: #F1F5F9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Benefit Cards */
+.benefits-section-wrap {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-card);
+  padding-top: 18px;
+}
+
+.benefits-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--saffron-600);
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 640px) {
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.benefit-card-clean {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-inner);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.benefit-card-clean:hover {
+  transform: translateY(-2px);
+  border-color: var(--saffron-500);
+}
+
+.benefit-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.benefit-icon-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--saffron-100);
+  color: var(--saffron-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.benefit-card-clean h4 {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1E293B;
+}
+
+.benefit-card-clean p {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Trust Badges */
+.trust-badges-strip {
+  background: var(--saffron-50);
+  border: 1px solid var(--border-saffron);
+  border-radius: var(--radius-inner);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.trust-badges-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--saffron-700);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.trust-badges-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .trust-badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.trust-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.trust-badge-pill svg {
+  width: 15px;
+  height: 15px;
+  color: var(--saffron-600);
+  flex-shrink: 0;
+}
+
+.comp-disclaimer {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.comp-cta-card {
+  background: var(--primary-gradient);
+  border-radius: var(--radius-inner);
+  padding: 20px 16px;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.comp-cta-card h4 {
+  font-size: 1.22rem;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+
+.comp-cta-card p {
+  font-size: 0.8rem;
+  opacity: 0.95;
+  margin-bottom: 14px;
+}
+
+.comp-cta-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .comp-cta-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.btn-comp-primary {
+  background: #FFFFFF;
+  color: var(--saffron-700);
+  font-weight: 800;
+  font-size: 0.92rem;
+  padding: 12px 20px;
+  border-radius: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: block;
+  text-align: center;
+}
+
+.btn-comp-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 12px 20px;
+  border-radius: 25px;
+  display: block;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   9. CONTENT BOXES (HOW IT WORKS, REWARDS, REFERRAL, APK, FAQ, FOOTER)
+   -------------------------------------------------------------------------- */
+.content-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 14px;
+}
+
+.section-box {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  padding: 22px 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+.section-box-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--saffron-600);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.steps-list-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-row-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-inner);
+  padding: 12px;
+}
+
+.step-number-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--saffron-500);
+  color: #FFFFFF;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+
+.step-info h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.step-info p {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* Referral Calculator */
+.calc-box-mobile {
+  background: var(--saffron-50);
+  border: 1.5px solid var(--border-saffron);
+  border-radius: var(--radius-inner);
+  padding: 16px;
+}
+
+.slider-styled {
+  width: 100%;
+  height: 8px;
+  background: #CBD5E1;
+  border-radius: 10px;
+  outline: none;
+  -webkit-appearance: none;
+  margin: 10px 0;
+}
+
+.slider-styled::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--saffron-500);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+  cursor: pointer;
+}
+
+.calc-display-val {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: var(--saffron-600);
+}
+
+.referral-input-copy {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.referral-input-copy input {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.referral-input-copy button {
+  background: var(--saffron-500);
+  color: #FFFFFF;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+/* APK Download Card */
+.apk-card-clean {
+  background: linear-gradient(135deg, #7C2D12 0%, #9A3412 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-card);
+  padding: 22px 16px;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(124, 45, 18, 0.3);
+}
+
+.apk-card-clean h2,
+.apk-card-clean h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #FFFFFF;
+}
+
+.apk-card-clean p {
+  font-size: 0.82rem;
+  opacity: 0.92;
+  margin-bottom: 14px;
+}
+
+.btn-apk-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #FACC15;
+  color: #7C2D12;
+  font-weight: 800;
+  font-size: 0.92rem;
+  padding: 12px 20px;
+  border-radius: 25px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* FAQ Accordion */
+.faq-accordion-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-card {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-inner);
+  background: var(--bg-card-subtle);
+  overflow: hidden;
+}
+
+.faq-card-header {
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: #0F172A;
+}
+
+.faq-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 16px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.faq-card.active .faq-card-body {
+  max-height: 300px;
+  padding: 0 16px 14px 16px;
+}
+
+/* Footer */
+.footer-clean {
+  text-align: center;
+  padding: 24px 16px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.footer-social-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.footer-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+.footer-social-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   10. FIXED MOBILE CONVERSION BAR (Transparent Floating Background)
+   -------------------------------------------------------------------------- */
+.bottom-sticky-conversion {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1100;
+  padding: 0 14px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: none;
+  box-shadow: none;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.sticky-pill-banner {
+  background: var(--accent-red);
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 20px;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: -1px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 -2px 8px rgba(225, 29, 72, 0.35);
+  pointer-events: auto;
+}
+
+.btn-get-money-now {
+  background: var(--primary-gradient);
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 12px 20px;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 24px rgba(255, 106, 0, 0.45);
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.btn-get-money-now:active {
+  transform: scale(0.98);
+}
+
+/* Toast Notification */
+.toast-mobile {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.toast-mobile.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

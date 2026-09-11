@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Support Chat Room - Tiranga Pay</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+</head>
+<body>
+
+<div class="app-viewport" style="padding-bottom: 0;">
+
+    <!-- Header -->
+    <header class="app-header with-bg">
+        <a id="roomBackBtn" href="guest-chat-sessions.html" class="back-btn">&lsaquo;</a>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="header-title">Support Chat</div>
+            <span class="status-badge open" id="chatStatusBadge">OPEN</span>
+        </div>
+        <button onclick="document.getElementById('btnGuestCloseChat').click()" class="back-btn" style="border: none; font-size: 11px; width: auto; padding: 0 12px;" title="Close Chat">Close</button>
+    </header>
+
+    <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+
+        <!-- Messages Viewport (token injected from URL) -->
+        <div class="chat-messages-viewport" id="chatMessagesViewport" data-token="">
+            <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading conversation...</div>
+        </div>
+        <script>
+            (function () {
+                const params = new URLSearchParams(window.location.search);
+                const token = params.get('token') || '';
+                const isAdmin = params.get('admin') === '1';
+                const vp = document.getElementById('chatMessagesViewport');
+                if (vp) vp.setAttribute('data-token', token);
+                const back = document.getElementById('roomBackBtn');
+                if (back) back.href = isAdmin ? '../admin/index.html' : 'guest-chat-sessions.html';
+            })();
+        </script>
+
+        <!-- Chat Closed Banner -->
+        <div class="chat-closed-banner" id="chatClosedBanner" style="display: none;">
+            <div style="font-size: 28px; margin-bottom: 4px;"><span data-ic="logout"></span></div>
+            <div class="chat-closed-title">Conversation Closed</div>
+            <div class="chat-closed-desc">This support conversation was closed.</div>
+            <a href="guest-chat.html" class="btn-outline" style="width: auto; padding: 10px 18px; font-size: 12px;">+ New Support Chat</a>
+        </div>
+
+        <!-- Image Preview Bar -->
+        <div class="guest-img-preview-bar" id="guestImgPreviewBar" style="display: none;">
+            <img id="guestImgPreviewThumb" src="#" alt="Preview">
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text);"><span data-ic="camera"></span> Attachment ready</div>
+                <div id="guestImgName" style="font-size: 10px; color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"></div>
+            </div>
+            <button onclick="clearGuestSelectedImage()" style="border: none; background: #F1F5F9; color: var(--danger); width: 30px; height: 30px; border-radius: 50%; font-weight: 800; cursor: pointer;"><span data-ic="close"></span></button>
+        </div>
+
+        <!-- Bottom Chat Input Bar -->
+        <div class="chat-input-bar" id="guestMessageForm">
+            <label for="guestChatImgInput" style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; flex-shrink: 0;"><span data-ic="attach"></span></label>
+            <input type="file" id="guestChatImgInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none;" onchange="handleGuestImageSelect(this)">
+            <input type="text" id="guestChatInput" class="chat-input-field" placeholder="Type your message..." autocomplete="off">
+            <button class="btn-chat-send" id="btnGuestChatSend" title="Send"><span data-ic="send2"></span></button>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal Dialog: Guest 2MB File Size Alert -->
+<div class="guest-chat-modal-overlay" id="guestFileSizeModalOverlay">
+    <div class="guest-chat-modal-card">
+        <div style="font-size: 40px; margin-bottom: 8px;"><span data-ic="alert"></span></div>
+        <div style="font-weight: 800; font-size: 17px; color: var(--danger); margin-bottom: 6px;">Image Size Exceeds 2MB</div>
+        <div id="guestFileSizeModalMsg" style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
+            Please select an image under 2 MB.
+        </div>
+        <button type="button" class="btn-primary" onclick="closeGuestFileSizeModal()" style="height: 42px; font-size: 14px;">
+            Understood
+        </button>
+    </div>
+</div>
+
+<!-- Modal Dialog: Guest Image Lightbox View -->
+<div class="guest-chat-modal-overlay" id="guestLightboxOverlay" onclick="closeGuestLightbox()">
+    <div style="position: relative; max-width: 92vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation()">
+        <button type="button" onclick="closeGuestLightbox()" style="position: absolute; top: -14px; right: -14px; background: #DC2626; color: #FFF; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; cursor: pointer; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px;"><span data-ic="close"></span></button>
+        <img id="guestLightboxImg" src="#" alt="Full view" style="max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); background: #0F172A;">
+    </div>
+</div>
+
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/guest-chat.js"></script>
+</body>
+</html>

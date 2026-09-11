@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Deposit - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <style>
+    /* ===== USDT Section – Liquid Silver Glass (BasePayz Exact Match) ===== */
+    .usdt-price-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .usdt-price-item {
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.12), inset 0 1px 0 #fff;
+    }
+    .usdt-price-item span {
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #7A8AA3;
+        text-transform: uppercase;
+        letter-spacing: 1.1px;
+        font-family: 'Manrope', sans-serif;
+    }
+    .usdt-price-item h3 {
+        font-size: 15px;
+        margin: 5px 0 0;
+        color: #1B2430;
+        font-family: 'Sora', sans-serif;
+        font-weight: 800;
+    }
+    .usdt-price-item:last-child h3 {
+        color: #E85D1F;
+    }
+
+    /* Calculator card (orange gradient glass) */
+    .usdt-calc-card {
+        background: linear-gradient(135deg, rgba(255, 122, 61, 0.92), rgba(242, 91, 18, 0.92));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #fff;
+        border-radius: 22px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 24px 44px -20px rgba(242, 91, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    .usdt-calc-card::after {
+        content: "";
+        position: absolute;
+        right: -30px;
+        top: -50px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+    }
+    .usdt-calc-card > * {
+        position: relative;
+        z-index: 2;
+    }
+    .usdt-calc-card h3 {
+        margin: 0;
+        font-size: 14px;
+        font-family: 'Sora', sans-serif;
+        font-weight: 800;
+    }
+    .usdt-calc-card .usdt-ratio-text {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.75);
+        margin: 3px 0 10px;
+        font-family: 'Manrope', sans-serif;
+    }
+    .usdt-input-box {
+        position: relative;
+        margin-bottom: 10px;
+    }
+    .usdt-input-box input {
+        width: 100%;
+        height: 46px;
+        border-radius: 13px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.95);
+        color: #1B2430;
+        padding: 0 56px 0 14px;
+        font-size: 18px;
+        font-family: 'Sora', sans-serif;
+        font-weight: 800;
+        outline: none;
+        box-shadow: inset 0 2px 6px rgba(120, 50, 10, 0.12);
+    }
+    .usdt-input-box span {
+        position: absolute;
+        right: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #B8865E;
+        font-size: 11px;
+        font-weight: 800;
+        font-family: 'Manrope', sans-serif;
+    }
+    .usdt-calc-row {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 0;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.85);
+        font-family: 'Manrope', sans-serif;
+    }
+    .usdt-calc-row .green {
+        color: #7CF5C8;
+        font-weight: 800;
+    }
+    .usdt-total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.35);
+        font-size: 16px;
+        font-weight: 800;
+        font-family: 'Sora', sans-serif;
+    }
+
+    /* Create order button */
+    .usdt-create-btn {
+        width: 100%;
+        height: 48px;
+        border-radius: 15px;
+        border: none;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: 0 16px 30px -10px rgba(242, 91, 18, 0.6), inset 0 1.5px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+        margin-bottom: 4px;
+    }
+    .usdt-create-btn:active {
+        transform: scale(0.98);
+    }
+
+    /* Quick chips */
+    .usdt-chip-wrap {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 9px;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+    .usdt-chip {
+        position: relative;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        color: #E85D1F;
+        text-align: center;
+        padding: 12px 0;
+        border-radius: 14px;
+        font-size: 13.5px;
+        font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        transition: transform 0.15s;
+    }
+    .usdt-chip:active {
+        transform: scale(0.93);
+        background: rgba(255, 140, 80, 0.2);
+    }
+    .usdt-chip .chip-tag {
+        position: absolute;
+        top: -7px;
+        right: -4px;
+        font-size: 7.5px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        padding: 3px 7px;
+        border-radius: 99px;
+        background: linear-gradient(135deg, #2A2118, #4A3A28);
+        color: #EDE3D8;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 8px rgba(20, 15, 5, 0.35);
+        font-family: 'Manrope', sans-serif;
+    }
+    .usdt-chip .chip-tag.vip {
+        background: linear-gradient(135deg, #F5D67B, #D9A441);
+        color: #6B4A0E;
+        border-color: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 4px 10px rgba(180, 130, 30, 0.5);
+    }
+
+    @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ===== Deposit Confirm Bottom Sheet (Firebase) ===== */
+    .dc-overlay {
+        position: fixed; inset: 0;
+        background: rgba(30, 40, 60, 0.45);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        display: flex; align-items: flex-end; justify-content: center;
+        z-index: 5000;
+        transition: opacity 0.2s;
+    }
+    .dc-overlay.hidden { display: none; }
+    .dc-sheet {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(28px) saturate(1.4);
+        -webkit-backdrop-filter: blur(28px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.95);
+        border-bottom: none;
+        padding: 24px 22px;
+        border-radius: 28px 28px 0 0;
+        max-width: 440px; width: 100%;
+        box-shadow: 0 -20px 50px rgba(30, 40, 60, 0.3), inset 0 1px 0 #fff;
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+    .dc-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 18px; font-weight: 800;
+        color: #1B2430; letter-spacing: -0.3px;
+        margin: 0 0 4px; text-align: center;
+    }
+    .dc-sub {
+        font-size: 12.5px; font-weight: 700;
+        color: #7A8AA3; margin: 0 0 12px;
+        line-height: 1.5; text-align: center;
+    }
+    .dc-pay-card {
+        background: linear-gradient(135deg, rgba(255, 122, 61, 0.92), rgba(242, 91, 18, 0.92));
+        color: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 12px 24px -10px rgba(242, 91, 18, 0.5);
+        text-align: center;
+    }
+    .dc-pay-amount { font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 800; }
+    .dc-pay-to {
+        font-size: 12px; font-weight: 700;
+        color: rgba(255, 255, 255, 0.85);
+        word-break: break-all; margin: 6px 0 0; line-height: 1.4;
+    }
+    .dc-pay-copy {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 11px; font-weight: 800;
+        padding: 6px 14px; border-radius: 99px;
+        background: #fff; color: #F25B12; border: none; cursor: pointer;
+    }
+    .dc-input-wrap { position: relative; margin-bottom: 10px; }
+    .dc-input-wrap input {
+        width: 100%; height: 48px;
+        border-radius: 14px;
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #1B2430;
+        padding: 0 14px 0 14px;
+        font-size: 14px; font-family: 'Sora', sans-serif; font-weight: 700;
+        outline: none;
+        box-shadow: 0 8px 22px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .dc-input-wrap input:focus {
+        border-color: #FF7A3D;
+        box-shadow: 0 8px 22px rgba(242, 91, 18, 0.2), inset 0 1px 0 #fff;
+    }
+    .dc-input-wrap input::placeholder { color: #AAB4C5; font-weight: 600; }
+    .dc-mpin-row { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+    .dc-otp-input {
+        width: 42px; height: 50px;
+        text-align: center;
+        font-family: 'Sora', sans-serif;
+        font-size: 18px; font-weight: 800; color: #1B2430;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        box-shadow: 0 8px 22px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        outline: none; caret-color: #F25B12;
+        transition: border-color 0.15s, transform 0.15s;
+        padding: 0;
+    }
+    .dc-otp-input:focus {
+        border-color: #FF7A3D;
+        transform: translateY(-2px);
+    }
+    .dc-otp-input::-webkit-outer-spin-button,
+    .dc-otp-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .dc-submit-btn {
+        width: 100%; margin-top: 20px;
+        padding: 15px;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff; border: none; border-radius: 15px;
+        font-size: 14px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        cursor: pointer;
+        box-shadow: 0 14px 26px -8px rgba(242, 91, 18, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+    }
+    .dc-submit-btn:active { transform: scale(0.98); }
+    .dc-pkg-note {
+        font-size: 11px; font-weight: 700;
+        color: #7A8AA3; margin: 0 0 12px; text-align: center; line-height: 1.5;
+    }
+    </style>
+</head>
+<body>
+
+<div class="app-viewport">
+
+    <!-- Header -->
+    <header class="app-header">
+        <a href="dashboard.html" class="back-btn">&lsaquo;</a>
+        <div class="header-title">Deposit</div>
+        <div style="width: 38px;"></div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="app-content">
+
+        <!-- Top Segment Switcher (Underline Style) -->
+        <div style="display: flex; gap: 24px; padding: 0 12px; margin-bottom: 16px; border-bottom: 2px solid #E2E8F0;">
+            <button type="button" id="tabInr" onclick="switchDepositTab('inr')" style="background: none; border: none; padding: 8px 4px 12px; font-size: 18px; font-weight: 800; color: #FF6600; border-bottom: 3px solid #FF6600; margin-bottom: -2px; cursor: pointer;">
+                INR
+            </button>
+            <button type="button" id="tabUsdt" onclick="switchDepositTab('usdt')" style="background: none; border: none; padding: 8px 4px 12px; font-size: 18px; font-weight: 700; color: #94A3B8; cursor: pointer;">
+                USDT
+            </button>
+        </div>
+
+        <!-- Task Bonus Banner Card -->
+        <div style="background: #FFF0E6; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border: 1px solid #FFD0B3;">
+            <span style="font-size: 20px;" data-ic="gift"></span>
+            <span style="font-size: 13px; font-weight: 800; color: #FF6600;">Complete task to earn Commission Bonus</span>
+        </div>
+
+        <!-- ==================== INR DEPOSIT SECTION ==================== -->
+        <div id="secInr">
+
+            <!-- How to Buy Quota Accordion Card -->
+            <div style="background: #FFFFFF; border-radius: 18px; padding: 16px 20px; margin-bottom: 16px; box-shadow: var(--card-shadow);">
+                <div onclick="toggleHowToBuy()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span style="font-size: 15px; font-weight: 800; color: #1E293B;">How to Buy Quota?</span>
+                    <span id="accordionIcon" style="font-size: 14px; color: #FF6600; transition: transform 0.2s;">∨</span>
+                </div>
+                <div id="howToBuyContent" style="display: none; margin-top: 12px; font-size: 12px; color: var(--text-muted); line-height: 1.6; border-top: 1px solid #F1F5F9; padding-top: 10px;">
+                    1. Select your preferred package tier (LOW, MIDDLE, HIGH).<br>
+                    2. Click <strong>Buy</strong> to create a deposit request for that quota package.<br>
+                    3. Pay the package amount to the admin UPI ID and submit the request. Your wallet is credited after admin verification.
+                </div>
+            </div>
+
+            <!-- Tier Selection Filter Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+                <button type="button" class="tier-card active" onclick="filterCategory(this, 'LOW')" style="background: #FF6600; color: #FFF; border: none; padding: 12px 8px; border-radius: 16px; text-align: center; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 102, 0, 0.25);">
+                    <div style="font-size: 14px; font-weight: 800;">LOW</div>
+                    <div style="font-size: 11px; opacity: 0.9;">+5%</div>
+                </button>
+                <button type="button" class="tier-card" onclick="filterCategory(this, 'MIDDLE')" style="background: #FFFFFF; color: #1E293B; border: 1px solid #E2E8F0; padding: 12px 8px; border-radius: 16px; text-align: center; cursor: pointer; box-shadow: var(--card-shadow);">
+                    <div style="font-size: 14px; font-weight: 800;">MIDDLE</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">+7%</div>
+                </button>
+                <button type="button" class="tier-card" onclick="filterCategory(this, 'HIGH')" style="background: #FFFFFF; color: #1E293B; border: 1px solid #E2E8F0; padding: 12px 8px; border-radius: 16px; text-align: center; cursor: pointer; box-shadow: var(--card-shadow);">
+                    <div style="font-size: 14px; font-weight: 800;">HIGH</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">+9%</div>
+                </button>
+            </div>
+
+            <!-- Filter Controls Row (Low to high, Min, Max) -->
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <select class="select-custom" onchange="sortPackages(this.value)" style="height: 42px; border-radius: 14px; border: 1px solid #E2E8F0; padding: 0 10px; font-size: 12px; font-weight: 600; background: #FFF;">
+                    <option value="asc">Low to high</option>
+                    <option value="desc">High to low</option>
+                </select>
+                <input type="number" id="minPrice" class="input-mini" placeholder="Min" oninput="filterPriceRange()" style="height: 42px; width: 100%; border-radius: 14px; border: 1px solid #E2E8F0; padding: 0 10px; font-size: 12px; font-weight: 600; background: #FFF;">
+                <input type="number" id="maxPrice" class="input-mini" placeholder="Max" oninput="filterPriceRange()" style="height: 42px; width: 100%; border-radius: 14px; border: 1px solid #E2E8F0; padding: 0 10px; font-size: 12px; font-weight: 600; background: #FFF;">
+            </div>
+
+            <!-- Refresh Button -->
+            <button type="button" onclick="resetFilters()" style="width: 100%; height: 48px; background: #FF6600; color: #FFFFFF; border: none; border-radius: 24px; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 6px 18px rgba(255, 102, 0, 0.25); margin-bottom: 20px;">
+                <span data-ic="clock"></span> Refresh
+            </button>
+
+            <!-- Package Cards Stack -->
+            <div id="packagesContainer">
+                                    <div class="package-card" data-category="LOW" data-price="1000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">1,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">60.00 (6.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">1,060.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 7, 'Low', 1000.00, 60.00, 6.00, 1060.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="MIDDLE" data-price="5000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">5,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">450.00 (9.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">5,450.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 9, 'Middle', 5000.00, 450.00, 9.00, 5450.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="MIDDLE" data-price="6500.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">6,500.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">585.00 (9.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">7,185.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 10, 'Middle', 6500.00, 585.00, 9.00, 7185.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="MIDDLE" data-price="10000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">10,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">900.00 (9.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">10,900.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 11, 'Middle', 10000.00, 900.00, 9.00, 10900.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="15000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">15,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">2,250.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">17,250.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 12, 'High', 15000.00, 2250.00, 15.00, 17250.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="20000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">20,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">3,000.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">23,000.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 13, 'High', 20000.00, 3000.00, 15.00, 23000.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="24000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">24,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">3,600.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">27,600.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 14, 'High', 24000.00, 3600.00, 15.00, 27600.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="45000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">45,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">6,750.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">51,750.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 16, 'High', 45000.00, 6750.00, 15.00, 51750.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="50000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">50,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">7,500.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">57,500.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 17, 'High', 50000.00, 7500.00, 15.00, 57500.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="LOW" data-price="470.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">470.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">28.20 (6.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">498.20</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 1, 'Starter Quota 470', 470.00, 28.20, 6.00, 498.20)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="30000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">30,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">4,500.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">34,500.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 6, 'High', 30000.00, 4500.00, 15.00, 34500.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="LOW" data-price="650.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">650.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">39.00 (6.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">689.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 2, 'Standard Quota 650', 650.00, 39.00, 6.00, 689.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="LOW" data-price="800.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">800.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">56.00 (6.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">856.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 3, 'Pro Quota 800', 800.00, 56.00, 6.00, 856.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="LOW" data-price="1500.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">1,500.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">135.00 (9.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">1,635.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 4, 'VIP Quota 1500', 1500.00, 135.00, 9.00, 1635.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="MIDDLE" data-price="2000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">2,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">180.00 (9.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">2,180.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 8, 'Middle', 2000.00, 180.00, 9.00, 2180.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="MIDDLE" data-price="3000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">3,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">360.00 (12.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">3,360.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 5, 'Max Quota 3000', 3000.00, 360.00, 12.00, 3360.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="18000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">18,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">2,700.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">18,000.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 18, 'HIGH Tier (₹18000)', 18000.00, 2700.00, 15.00, 18000.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                                    <div class="package-card" data-category="HIGH" data-price="36000.00" style="background: #FFFFFF; border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid #FF6600; box-shadow: 0 4px 18px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">36,000.00 INR</div>
+                            <div style="display: flex; gap: 16px; font-size: 12px;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Income</div>
+                                    <div style="font-weight: 800; color: #1E293B;">5,400.00 (15.00%)</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Quota</div>
+                                    <div style="font-weight: 800; color: #FF6600;">36,000.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyQuotaPackage(event, 15, 'High', 36000.00, 5400.00, 15.00, 36000.00)" style="background: #1A1A1A; color: #FFFFFF; border: none; border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;">
+                            Buy
+                        </button>
+                    </div>
+                            </div>
+
+        </div>
+
+        <!-- ==================== USDT DEPOSIT SECTION (Liquid Silver Glass) ==================== -->
+        <div id="secUsdt" style="display: none;">
+
+            <!-- Glassmorphism Price Cards Grid -->
+            <div class="usdt-price-grid">
+                <div class="usdt-price-item">
+                    <span>Normal Price</span>
+                    <h3>105.00 INR</h3>
+                </div>
+                <div class="usdt-price-item">
+                    <span>Platform Price</span>
+                    <h3>111.00 INR</h3>
+                </div>
+            </div>
+
+            <!-- Orange Gradient Glass Calculator Card -->
+            <div class="usdt-calc-card">
+                <h3>Calculator</h3>
+                <p class="usdt-ratio-text">1 USDT = 111.00 INR</p>
+                <div class="usdt-input-box">
+                    <input type="number" id="usdtAmount" name="usdt_amount" placeholder="0" min="10" step="1">
+                    <span>USDT</span>
+                </div>
+                <div class="usdt-calc-row">
+                    <span>Estimated bonus</span>
+                    <span class="green" id="estBonusVal">0.00 (12%) INR</span>
+                </div>
+                <div class="usdt-calc-row">
+                    <span>Activity Reward</span>
+                    <span id="activityRewardVal">0.00 INR</span>
+                </div>
+                <div class="usdt-total-row">
+                    <span>Total</span>
+                    <span id="totalUsdtInrVal">0.00 INR</span>
+                </div>
+            </div>
+
+            <!-- Create Order Button -->
+            <button type="button" class="usdt-create-btn" onclick="openUsdtModal()">Create Order</button>
+
+            <!-- Quick Amount Chip Grid (3x3 with BASIC/VIP tags) -->
+            <div class="usdt-chip-wrap">
+                                    <div class="usdt-chip" onclick="setUsdt(10)">
+                        10                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(20)">
+                        20                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(30)">
+                        30                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(50)">
+                        50                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(100)">
+                        100                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(200)">
+                        200                        <span class="chip-tag ">BASIC</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(500)">
+                        500                        <span class="chip-tag vip">VIP</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(1000)">
+                        1000                        <span class="chip-tag vip">VIP</span>
+                    </div>
+                                    <div class="usdt-chip" onclick="setUsdt(1500)">
+                        1500                        <span class="chip-tag vip">VIP</span>
+                    </div>
+                            </div>
+
+        </div>
+
+        <!-- Guidelines & How It Works Section -->
+        <div class="form-card guidelines-card" style="margin-top: 16px; padding: 18px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid var(--border); box-shadow: var(--card-shadow);"><div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleGuidelines(this)">  <div style="display: flex; align-items: center; gap: 12px;">    <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0DF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;" data-ic="book"></div>    <div>      <div style="font-size: 15px; font-weight: 800; color: var(--text);">Deposit &amp; Recharge Guidelines</div>      <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Step-by-step guide & how it works</div>    </div>  </div>  <span class="guidelines-arrow" style="font-size: 16px; color: var(--primary); transition: transform 0.3s; font-weight: 800;">&#9660;</span></div><div class="guidelines-content" style="display: block; margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;"><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">1</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Select Deposit Method (INR or USDT)</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Choose between instant INR UPI deposit or USDT TRC20 crypto wallet deposit according to your preference.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">2</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">First Deposit Bonus (₹150 Extra Reward)</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Make your first recharge of ₹3,000 or more and automatically receive an exclusive ₹150 first deposit bonus credited to your wallet!</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">3</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Minimum Deposit &amp; Topup Bonus</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Minimum deposit amount is ₹200. INR top-up deposits automatically qualify for up to 9% bonus added directly to your bonus wallet.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">4</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Make Payment &amp; Submit UTR / TxID</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Pay to the merchant UPI ID or USDT TRC20 wallet address. Copy the 12-digit UTR reference number or TxID hash and submit the form.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">5</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Instant Verification &amp; Wallet Credit</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Admin verifies your transaction reference and credits your account wallet balance after approval.</div>  </div></div></div></div>
+    </div>
+
+    <!-- Purchase Success Modal -->
+    <div id="successModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #FFFFFF; width: 100%; max-width: 360px; border-radius: 24px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="width: 64px; height: 64px; background: #DCFCE7; color: #16A34A; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px;">
+                <span data-ic="check"></span>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 4px;">Request Submitted</h3>
+            <p id="succPkgName" style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 20px;"></p>
+
+            <div style="background: #FFF8F0; border: 1px solid #FFE4CB; border-radius: 16px; padding: 16px; margin-bottom: 24px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Requested Amount:</span>
+                    <strong id="succPrice" style="color: var(--text);"></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Method:</span>
+                    <strong id="succIncome" style="color: var(--success);"></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Status:</span>
+                    <strong id="succQuota" style="color: #B45309;">Pending Approval</strong>
+                </div>
+                <hr style="border: none; border-top: 1px dashed #FFD4A8; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 800;">
+                    <span>Note:</span>
+                    <span id="succBalance" style="color: var(--primary);">Admin verifies</span>
+                </div>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="closeSuccessModal()">
+                OK, GOT IT
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">
+            <span class="nav-icon" data-ic="home"></span>
+            <span>Home</span>
+        </a>
+        <a href="deposit.html" class="nav-item active">
+            <span class="nav-icon" data-ic="receive"></span>
+            <span>Deposit</span>
+        </a>
+        <a href="withdraw.html" class="nav-item">
+            <span class="nav-icon" data-ic="bank"></span>
+            <span>Withdraw</span>
+        </a>
+        <a href="team.html" class="nav-item">
+            <span class="nav-icon" data-ic="users"></span>
+            <span>Team</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <span class="nav-icon" data-ic="user"></span>
+            <span>Me</span>
+        </a>
+    </nav>
+
+    <!-- Quick Online Payment Gateway Modal -->
+    <div id="gatewayModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #FFFFFF; width: 100%; max-width: 380px; border-radius: 24px; padding: 28px 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--text);"><span data-ic="spark"></span> Quick Deposit</div>
+                <button type="button" onclick="closeGatewayModal()" style="background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer;">&times;</button>
+            </div>
+
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Enter the deposit amount. Pay to the admin UPI ID and submit; funds are credited to your wallet after admin verification.
+            </p>
+
+            <form id="gatewayForm" onsubmit="submitQuickGatewayPayment(event)">
+                <div class="input-group" style="margin-bottom: 14px;">
+                    <div class="input-icon-pill">₹</div>
+                    <input type="number" id="gwAmount" class="input-field" placeholder="Enter Amount (e.g. 1000)" required min="100" step="100">
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <button type="button" class="filter-pill" onclick="setGwAmt(500)">₹500</button>
+                    <button type="button" class="filter-pill" onclick="setGwAmt(1000)">₹1000</button>
+                    <button type="button" class="filter-pill" onclick="setGwAmt(2500)">₹2500</button>
+                    <button type="button" class="filter-pill" onclick="setGwAmt(5000)">₹5000</button>
+                </div>
+
+                <button type="submit" id="gwSubmitBtn" class="btn-primary">
+                    PROCEED TO DEPOSIT <span data-ic="rocket"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Deposit Confirm Bottom Sheet (Firebase) -->
+<div class="dc-overlay hidden" id="depOverlay" onclick="closeDepModal()">
+    <div class="dc-sheet" onclick="event.stopPropagation()">
+        <h3 class="dc-title" id="dcTitle">Confirm Deposit Request</h3>
+        <p class="dc-sub" id="dcSub">Pay the amount to the admin UPI and submit the request</p>
+        <div class="dc-pkg-note" id="dcPkgNote" style="display:none;"></div>
+        <div class="dc-pay-card">
+            <div class="dc-pay-amount" id="dcAmount">₹0.00</div>
+            <div class="dc-pay-to" id="dcPayTo">Loading...</div>
+            <button type="button" class="dc-pay-copy" id="dcCopyBtn" onclick="copyDepPayTo()">Copy</button>
+        </div>
+        <div class="dc-input-wrap">
+            <input type="text" id="dcRefInput" placeholder="Your UPI ID / TxID reference (optional)" autocomplete="off">
+        </div>
+        <div id="dcMpinWrap">
+            <div class="dc-mpin-row" id="dcMpinBox">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="dc-otp-input" inputmode="numeric" placeholder=" ">
+            </div>
+            <p style="font-size: 11px; font-weight: 700; color: #7A8AA3; margin: 8px 0 0; text-align: center;" id="dcMpinHint">6-digit MPIN</p>
+        </div>
+        <button type="button" class="dc-submit-btn" id="dcSubmitBtn" onclick="submitDepositRequest()">SUBMIT DEPOSIT REQUEST</button>
+    </div>
+</div>
+
+<script>
+/* ================= Global constants ================= */
+const USDT_RATE = 111;
+const USDT_MIN = 10;
+const USDT_MAX = 1000;
+const NORMAL_PRICE = 105;
+
+let UPI_ID = 'tirangapay@upi';
+let USDT_ADDR = '0x497c0cF2698094E324243A000514dBc2CcAdB101';
+let AD_UPI_RATE = 15.00; /* fallback INR ratio % */
+
+let currentEmailKey = '';
+let savedMpin = '';
+let depositCtx = null; /* { mode:'inr'|'usdt', amount, usdt, package_id, package_name, rate } */
+
+const dcMpinInputs = document.querySelectorAll('#dcMpinBox .dc-otp-input');
+dcMpinInputs.forEach((input, index) => {
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '');
+        if (input.value && index < dcMpinInputs.length - 1) {
+            dcMpinInputs[index + 1].focus();
+        }
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+            dcMpinInputs[index - 1].focus();
+        }
+    });
+});
+
+/* ================= Firebase wiring ================= */
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    const [userSnap, setSnap] = await Promise.all([
+        tpRef('users/' + currentEmailKey).once('value').catch(() => null),
+        tpRef('settings').once('value').catch(() => null)
+    ]);
+    const u = userSnap && userSnap.val();
+    if (!u) { tpClearSession(); window.location.href = 'login.html'; return; }
+    if (u.status !== 'approved') {
+        showToast('Deposits open only for approved accounts.', 'error');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        return;
+    }
+    savedMpin = u.mpin || '';
+
+    const s = setSnap && setSnap.val();
+    if (s) {
+        if ((s.upi_id || '').trim()) UPI_ID = s.upi_id.trim();
+        if ((s.usdt_addr || '').trim()) USDT_ADDR = s.usdt_addr.trim();
+        if (Number(s.deposit_min) > 0) USDT_MIN = Number(s.deposit_min); /* min deposit applies */
+    }
+});
+
+/* ================= Tabs / Filters (Original logic) ================= */
+function switchDepositTab(tab) {
+    const tabInr = document.getElementById('tabInr');
+    const tabUsdt = document.getElementById('tabUsdt');
+    if (tab === 'inr') {
+        tabInr.style.color = '#FF6600';
+        tabInr.style.borderBottom = '3px solid #FF6600';
+        tabInr.style.marginBottom = '-2px';
+        tabUsdt.style.color = '#94A3B8';
+        tabUsdt.style.borderBottom = 'none';
+        tabUsdt.style.marginBottom = '0';
+    } else {
+        tabUsdt.style.color = '#FF6600';
+        tabUsdt.style.borderBottom = '3px solid #FF6600';
+        tabUsdt.style.marginBottom = '-2px';
+        tabInr.style.color = '#94A3B8';
+        tabInr.style.borderBottom = 'none';
+        tabInr.style.marginBottom = '0';
+    }
+    document.getElementById('secInr').style.display = tab === 'inr' ? 'block' : 'none';
+    document.getElementById('secUsdt').style.display = tab === 'usdt' ? 'block' : 'none';
+}
+
+function sortPackages(order) {
+    const container = document.getElementById('packagesContainer');
+    const cards = Array.from(container.children);
+    cards.sort((a, b) => {
+        const p1 = parseFloat(a.getAttribute('data-price'));
+        const p2 = parseFloat(b.getAttribute('data-price'));
+        return order === 'asc' ? p1 - p2 : p2 - p1;
+    });
+    cards.forEach(card => container.appendChild(card));
+}
+
+function filterPriceRange() {
+    const min = parseFloat(document.getElementById('minPrice').value) || 0;
+    const max = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+    document.querySelectorAll('#packagesContainer .package-card').forEach(card => {
+        const p = parseFloat(card.getAttribute('data-price'));
+        card.style.display = (p >= min && p <= max) ? 'flex' : 'none';
+    });
+}
+
+function resetFilters() {
+    document.getElementById('minPrice').value = '';
+    document.getElementById('maxPrice').value = '';
+    document.querySelectorAll('.tier-card').forEach(tc => {
+        tc.style.background = '#FFFFFF';
+        tc.style.color = '#1E293B';
+        tc.style.boxShadow = 'var(--card-shadow)';
+        tc.style.border = '1px solid #E2E8F0';
+    });
+    const lowBtn = document.querySelector('.tier-card');
+    if (lowBtn) {
+        lowBtn.style.background = '#FF6600';
+        lowBtn.style.color = '#FFFFFF';
+        lowBtn.style.boxShadow = '0 4px 12px rgba(255, 102, 0, 0.25)';
+        lowBtn.style.border = 'none';
+    }
+    document.querySelectorAll('#packagesContainer .package-card').forEach(card => {
+        card.style.display = 'flex';
+    });
+    sortPackages('asc');
+}
+
+function filterCategory(el, cat) {
+    document.querySelectorAll('.tier-card').forEach(tc => {
+        tc.style.background = '#FFFFFF';
+        tc.style.color = '#1E293B';
+        tc.style.boxShadow = 'var(--card-shadow)';
+        tc.style.border = '1px solid #E2E8F0';
+    });
+    el.style.background = '#FF6600';
+    el.style.color = '#FFFFFF';
+    el.style.boxShadow = '0 4px 12px rgba(255, 102, 0, 0.25)';
+    el.style.border = 'none';
+    document.querySelectorAll('#packagesContainer .package-card').forEach(card => {
+        if (cat === 'ALL' || card.getAttribute('data-category') === cat) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function toggleHowToBuy() {
+    const content = document.getElementById('howToBuyContent');
+    const icon = document.getElementById('accordionIcon');
+    if (content.style.display === 'none' || content.style.display === '') {
+        content.style.display = 'block';
+        icon.textContent = '∧';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '∨';
+    }
+}
+
+/* ================= Buy Quota Package (Firebase) ================= */
+function buyQuotaPackage(evt, pkgId, pkgName, price, income, rate, quota) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    if (evt.currentTarget && evt.currentTarget.dataset.busy === '1') return;
+
+    depositCtx = {
+        mode: 'inr',
+        amount: price,
+        package_id: pkgId,
+        package_name: pkgName,
+        rate: rate
+    };
+    openDepModal(
+        'Confirm Deposit Request',
+        'Pay the package amount to the admin UPI and submit the request.',
+        'Package: ' + pkgName + ' • Quota: ₹' + Number(quota).toLocaleString('en-IN') + ' • Income rate: ' + rate + '%',
+        '₹' + Number(price).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+        'Pay to (admin UPI): ' + UPI_ID,
+        UPI_ID
+    );
+}
+
+/* ================= USDT Calculator ================= */
+const usdtInputEl = document.getElementById('usdtAmount');
+const bonusEl = document.getElementById('estBonusVal');
+const totalEl = document.getElementById('totalUsdtInrVal');
+const rewardEl = document.getElementById('activityRewardVal');
+
+function refreshUsdtCalc() {
+    const usdt = parseFloat(usdtInputEl.value);
+    if (isNaN(usdt) || usdt <= 0) {
+        bonusEl.innerText = '0.00 (12%) INR';
+        rewardEl.innerText = '0.00 INR';
+        totalEl.innerText = '0.00 INR';
+        return;
+    }
+    if (usdt < USDT_MIN) { bonusEl.innerText = 'Min ' + USDT_MIN + ' USDT'; rewardEl.innerText = '0.00 INR'; totalEl.innerText = '-'; return; }
+    if (usdt > USDT_MAX) { bonusEl.innerText = 'Max ' + USDT_MAX + ' USDT'; rewardEl.innerText = '0.00 INR'; totalEl.innerText = '-'; return; }
+    const baseInr = usdt * NORMAL_PRICE;
+    const rewardInr = usdt * (USDT_RATE - NORMAL_PRICE);
+    const totalInr = baseInr + rewardInr;
+    const percent = ((USDT_RATE - NORMAL_PRICE) / NORMAL_PRICE * 100).toFixed(0);
+    bonusEl.innerText = rewardInr.toFixed(2) + ' (' + percent + '%) INR';
+    rewardEl.innerText = rewardInr.toFixed(2) + ' INR';
+    totalEl.innerText = totalInr.toFixed(2) + ' INR';
+}
+
+if (usdtInputEl) usdtInputEl.addEventListener('input', refreshUsdtCalc);
+
+function setUsdt(amt) {
+    const inp = document.getElementById('usdtAmount');
+    inp.value = amt;
+    inp.dispatchEvent(new Event('input'));
+}
+
+function openUsdtModal() {
+    const amountInput = document.getElementById('usdtAmount');
+    const usdt = parseFloat(amountInput.value);
+    if (isNaN(usdt) || usdt <= 0) { showToast('Please enter a valid USDT amount', 'error'); return; }
+    if (usdt < USDT_MIN || usdt > USDT_MAX) { showToast('Amount must be between ' + USDT_MIN + ' and ' + USDT_MAX + ' USDT', 'error'); return; }
+
+    const totalInr = usdt * USDT_RATE;
+    depositCtx = { mode: 'usdt', amount: totalInr, usdt: usdt };
+    openDepModal(
+        'Confirm USDT Deposit',
+        'Send USDT (TRC20) to the address below, then submit the request.',
+        'Rate: 1 USDT = ₹' + USDT_RATE,
+        usdt + ' USDT',
+        'USDT (TRC20) address: ' + USDT_ADDR,
+        USDT_ADDR
+    );
+}
+
+/* ================= Quick Gateway Deposit (Firebase) ================= */
+function openQuickGatewayModal() { document.getElementById('gatewayModal').style.display = 'flex'; }
+function closeGatewayModal() { document.getElementById('gatewayModal').style.display = 'none'; }
+function setGwAmt(amt) { document.getElementById('gwAmount').value = amt; }
+
+function submitQuickGatewayPayment(evt) {
+    evt.preventDefault();
+    const amt = Number(document.getElementById('gwAmount').value);
+    if (!amt || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+    depositCtx = { mode: 'inr', amount: amt, package_name: 'Quick Deposit', rate: 0 };
+    openDepModal(
+        'Confirm Deposit Request',
+        'Pay the amount to the admin UPI and submit the request.',
+        '',
+        '₹' + amt.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+        'Pay to (admin UPI): ' + UPI_ID,
+        UPI_ID
+    );
+    closeGatewayModal();
+}
+
+/* ================= Deposit Confirm Sheet (Firebase) ================= */
+function openDepModal(title, sub, pkgNote, amountText, payToText, copyTextValue) {
+    document.getElementById('dcTitle').textContent = title;
+    document.getElementById('dcSub').textContent = sub;
+    const pn = document.getElementById('dcPkgNote');
+    if (pkgNote) { pn.style.display = 'block'; pn.textContent = pkgNote; } else { pn.style.display = 'none'; }
+    document.getElementById('dcAmount').textContent = amountText;
+    document.getElementById('dcPayTo').textContent = payToText;
+    const hint = document.getElementById('dcMpinHint');
+    hint.textContent = savedMpin
+        ? 'Enter your 6-digit MPIN'
+        : 'First time? Set your 6-digit MPIN';
+    document.getElementById('dcRefInput').value = '';
+    clearDcMpin();
+    document.getElementById('depOverlay').classList.remove('hidden');
+}
+
+function closeDepModal() {
+    document.getElementById('depOverlay').classList.add('hidden');
+}
+
+function clearDcMpin() {
+    dcMpinInputs.forEach(i => i.value = '');
+    if (dcMpinInputs[0]) dcMpinInputs[0].focus();
+}
+
+function getDcMpin() {
+    let m = '';
+    dcMpinInputs.forEach(i => m += i.value);
+    return m;
+}
+
+function copyDepPayTo() {
+    copyText(document.getElementById('dcPayTo').textContent.replace(/^[^:]*:\s*/, ''));
+}
+
+async function tpHashMpin(mpin) {
+    const data = new TextEncoder().encode('tp-mpin-' + String(mpin));
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function submitDepositRequest() {
+    if (!tpDB) { showToast('Firebase not connected.', 'error'); return; }
+    if (!depositCtx) { showToast('Nothing to submit.', 'error'); return; }
+
+    const mpin = getDcMpin();
+    if (!mpin || mpin.length !== 6) { showToast('Enter 6-digit MPIN', 'error'); return; }
+
+    const btn = document.getElementById('dcSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'SUBMITTING...';
+
+    try {
+        let mpinHash = '';
+        try { mpinHash = await tpHashMpin(mpin); } catch (e) { mpinHash = 'local-only'; }
+
+        if (savedMpin) {
+            if (mpinHash !== savedMpin) {
+                clearDcMpin();
+                showToast('Incorrect MPIN. Try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'SUBMIT DEPOSIT REQUEST';
+                return;
+            }
+        } else {
+            await tpRef('users/' + currentEmailKey).update({ mpin: mpinHash });
+            savedMpin = mpinHash;
+        }
+
+        const ref = document.getElementById('dcRefInput').value.trim();
+        const data = {
+            amount: depositCtx.amount,
+            method: depositCtx.mode,
+            status: 'pending',
+            created_at: tpNow()
+        };
+        if (depositCtx.mode === 'usdt') {
+            data.usdt_amount = depositCtx.usdt;
+            data.usdt_addr = USDT_ADDR;
+            data.usdt_txid = ref;
+        } else {
+            data.upi_from = ref || '';
+            data.upi_ref = '';
+        }
+        if (depositCtx.package_id) data.package_id = depositCtx.package_id;
+        if (depositCtx.package_name) data.package_name = depositCtx.package_name;
+        if (depositCtx.rate) data.income_rate = depositCtx.rate;
+
+        await tpRef('deposits/' + currentEmailKey + '/' + tpId()).set(data);
+
+        closeDepModal();
+        showSuccessModal({
+            package_name: depositCtx.package_name || (depositCtx.mode === 'usdt' ? 'USDT Deposit' : 'Deposit'),
+            package_price: depositCtx.amount,
+            method: depositCtx.mode === 'usdt' ? 'USDT (TRC20)' : 'INR / UPI'
+        });
+        depositCtx = null;
+    } catch (e) {
+        showToast('Error submitting deposit. Check Firebase rules.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'SUBMIT DEPOSIT REQUEST';
+    }
+}
+
+/* ================= Success Modal ================= */
+function showSuccessModal(d) {
+    document.getElementById('succPkgName').textContent = d.package_name;
+    document.getElementById('succPrice').textContent = '₹' + Number(d.package_price).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    document.getElementById('succIncome').textContent = d.method;
+    document.getElementById('succBalance').textContent = 'Pending verification';
+    document.getElementById('successModal').style.display = 'flex';
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').style.display = 'none';
+}
+</script>
+</body>
+</html>

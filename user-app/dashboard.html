@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Home - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+
+    <style>
+    /* ===== Home Page – Liquid Silver Glass ===== */
+    .home-page {
+        font-family: 'Manrope', sans-serif;
+        color: #1B2430;
+        background: linear-gradient(180deg, #E8EEF6 0%, #DCE6F2 50%, #E9EFF7 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        padding-bottom: calc(var(--bottom-nav-height) + 18px);
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .home-page::before, .home-page::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .home-page::before {
+        width: 300px; height: 300px;
+        background: #9DBBE8; opacity: 0.6;
+        top: -80px; left: -100px;
+    }
+    .home-page::after {
+        width: 280px; height: 280px;
+        background: #FFB98A; opacity: 0.5;
+        top: 260px; right: -120px;
+    }
+    .home-page > * { position: relative; z-index: 1; }
+
+    /* ===== Glass base ===== */
+    .h-glass {
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.12), inset 0 1px 0 #fff;
+    }
+
+    /* ===== Header ===== */
+    .home-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 10px;
+    }
+    .home-brand {
+        font-family: 'Sora', sans-serif;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+    }
+    .home-brand .accent { color: #F25B12; }
+    .home-notif {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #fff;
+        box-shadow: 0 6px 14px rgba(60, 80, 120, 0.12);
+        display: flex; align-items: center; justify-content: center;
+        color: #5A6B85; font-size: 18px;
+        cursor: pointer; text-decoration: none;
+        position: relative;
+        transition: transform 0.15s;
+    }
+    .home-notif:active { transform: scale(0.92); }
+    .home-notif .notif-dot {
+        position: absolute; top: 6px; right: 6px;
+        width: 8px; height: 8px;
+        background: #EF4444; border-radius: 50%;
+        display: none;
+    }
+
+    /* ===== Content ===== */
+    .home-content { padding: 0 20px; }
+
+    /* ===== Banner Slider ===== */
+    .home-banner-wrap {
+        position: relative;
+        width: 100%;
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 14px;
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.15);
+        aspect-ratio: 16 / 9;
+        background: #1B2430;
+        user-select: none;
+        touch-action: pan-y;
+    }
+    .hero-slider-track {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        will-change: transform;
+    }
+    .hero-slide-item {
+        min-width: 100%;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .hero-banner-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 18px;
+        background: #1B2430;
+    }
+    .hero-slider-dots {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 10;
+    }
+    .hero-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.45);
+        transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        cursor: pointer;
+    }
+    .hero-dot.active {
+        width: 20px;
+        border-radius: 10px;
+        background: #F25B12;
+        box-shadow: 0 0 8px rgba(242, 91, 18, 0.8);
+    }
+    .hero-slider-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(27, 36, 48, 0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        color: #FFFFFF;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        font-size: 16px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+    }
+    .hero-slider-nav.prev { left: 8px; }
+    .hero-slider-nav.next { right: 8px; }
+
+    /* ===== Wallet Balance Card ===== */
+    .home-wallet {
+        border-radius: 22px;
+        padding: 18px 20px;
+        margin-bottom: 10px;
+    }
+    .home-wallet-label {
+        font-size: 10px; font-weight: 800;
+        color: #7A8AA3;
+        text-transform: uppercase;
+        letter-spacing: 1.1px;
+        font-family: 'Manrope', sans-serif;
+    }
+    .home-wallet-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+    }
+    .home-wallet-amount {
+        font-size: 30px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        color: #1B2430;
+    }
+    .home-wallet-amount .decimal {
+        font-size: 18px; font-weight: 700;
+        color: #7A8AA3;
+    }
+    .home-topup-btn {
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff; border: none;
+        border-radius: 24px;
+        padding: 12px 22px;
+        font-size: 14px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        cursor: pointer; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 12px 24px -8px rgba(242, 91, 18, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+    }
+    .home-topup-btn:active { transform: scale(0.95); }
+
+    /* ===== Two Ratio Cards ===== */
+    .home-ratio-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .home-ratio-card {
+        border-radius: 18px;
+        padding: 14px 16px;
+    }
+    .home-ratio-card .ratio-label {
+        font-size: 9.5px; font-weight: 800;
+        color: #7A8AA3;
+        text-transform: uppercase;
+        letter-spacing: 1.1px;
+        font-family: 'Manrope', sans-serif;
+    }
+    .home-ratio-card .ratio-value {
+        font-size: 20px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        margin-top: 4px;
+    }
+    .home-ratio-card .ratio-sub {
+        font-size: 11px; font-weight: 700;
+        color: #7A8AA3; margin-top: 2px;
+    }
+
+    /* ===== Info Row Cards ===== */
+    .home-info-card {
+        border-radius: 22px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s;
+    }
+    .home-info-card:active { transform: scale(0.99); }
+    .home-info-icon {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: 800;
+        flex-shrink: 0;
+        font-family: 'Sora', sans-serif;
+    }
+    .home-info-icon svg { width: 22px; height: 22px; }
+    .home-info-icon.orange {
+        background: linear-gradient(135deg, rgba(255, 140, 80, 0.22), rgba(242, 91, 18, 0.12));
+        color: #F25B12;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 10px rgba(242, 91, 18, 0.1);
+    }
+    .home-info-icon.blue {
+        background: linear-gradient(135deg, rgba(100, 160, 240, 0.22), rgba(59, 130, 246, 0.12));
+        color: #3B82F6;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+    }
+    .home-info-icon.green {
+        background: linear-gradient(135deg, rgba(80, 200, 120, 0.22), rgba(34, 197, 94, 0.12));
+        color: #22C55E;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.1);
+    }
+    .home-info-content { flex: 1; }
+    .home-info-title {
+        font-size: 10px; font-weight: 800;
+        color: #7A8AA3;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-family: 'Manrope', sans-serif;
+    }
+    .home-info-value {
+        font-size: 18px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        color: #1B2430;
+        margin-top: 2px;
+    }
+    .home-info-chevron {
+        color: #94A3B8;
+        font-size: 20px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    /* ===== Status Banner (admin-controlled) ===== */
+    .home-status {
+        display: none;
+        border-radius: 18px;
+        padding: 13px 16px;
+        margin-bottom: 12px;
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1.4;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* ===== Floating Chat FAB ===== */
+    .home-chat-fab {
+        position: fixed;
+        bottom: 92px; right: 20px;
+        width: 52px; height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 12px 28px -6px rgba(242, 91, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        cursor: pointer; text-decoration: none;
+        z-index: 500;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        transition: transform 0.15s;
+    }
+    .home-chat-fab:active { transform: scale(0.92); }
+    .home-chat-fab svg { width: 24px; height: 24px; }
+    #homeBroadcast svg, .home-status svg { width: 16px; height: 16px; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+<div class="home-page">
+
+    <!-- Header -->
+    <header class="home-header">
+        <div class="home-brand">
+            <span>Tiranga</span> <span class="accent">Pay</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="#" class="home-notif" title="Notifications" aria-label="Notifications" onclick="showToast('No notifications yet.', 'info'); return false;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: #475569;">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-dot"></span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="home-content">
+
+        <!-- Status banner (admin-controlled) -->
+        <div class="home-status" id="homeStatusBanner"></div>
+
+        <!-- Broadcast banner (admin-controlled) -->
+        <div id="homeBroadcast" style="display:none; border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 12px; line-height: 1.5; align-items: center; gap: 8px;"></div>
+
+        <!-- Hero Banner Slider -->
+        <div class="home-banner-wrap hero-slider-container" id="heroSliderContainer">
+            <div class="hero-slider-track" id="heroSliderTrack">
+                <div class="hero-slide-item">
+                    <a href="deposit.html" style="display:block; width:100%; height:100%; text-decoration:none;">
+                        <img src="assets/images/banners/banner1.png" alt="" class="hero-banner-img">
+                    </a>
+                </div>
+                <div class="hero-slide-item">
+                    <a href="withdraw.html" style="display:block; width:100%; height:100%; text-decoration:none;">
+                        <img src="assets/images/banners/banner2.png" alt="" class="hero-banner-img">
+                    </a>
+                </div>
+                <div class="hero-slide-item">
+                    <a href="team.html" style="display:block; width:100%; height:100%; text-decoration:none;">
+                        <img src="assets/images/banners/banner3.png" alt="" class="hero-banner-img">
+                    </a>
+                </div>
+            </div>
+            <button type="button" class="hero-slider-nav prev" onclick="prevHeroSlide()">&lsaquo;</button>
+            <button type="button" class="hero-slider-nav next" onclick="nextHeroSlide()">&rsaquo;</button>
+            <div class="hero-slider-dots" id="heroSliderDots">
+                <span class="hero-dot active" onclick="goToHeroSlide(0)"></span>
+                <span class="hero-dot " onclick="goToHeroSlide(1)"></span>
+                <span class="hero-dot " onclick="goToHeroSlide(2)"></span>
+            </div>
+        </div>
+
+        <!-- Wallet Balance Card -->
+        <div class="home-wallet h-glass">
+            <div class="home-wallet-label">WALLET BALANCE</div>
+            <div class="home-wallet-row">
+                <div class="home-wallet-amount" data-wallet-balance>
+                    ₹0.00
+                </div>
+                <a href="deposit.html" class="home-topup-btn">+ Top Up</a>
+            </div>
+        </div>
+
+        <!-- Two Ratio Cards -->
+        <div class="home-ratio-grid">
+            <div class="home-ratio-card h-glass">
+                <div class="ratio-label">USDT RATIO</div>
+                <div class="ratio-value" style="color: #1B2430;">111.00 ₹</div>
+                <div class="ratio-sub">per 1₹</div>
+            </div>
+            <div class="home-ratio-card h-glass">
+                <div class="ratio-label">INR RATIO</div>
+                <div class="ratio-value" style="color: #E85D1F;">15.00%</div>
+                <div class="ratio-sub">bonus active</div>
+            </div>
+        </div>
+
+        <!-- Info Row Cards -->
+        <a href="#" class="home-info-card h-glass" style="background: linear-gradient(135deg, rgba(255, 240, 230, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%); border: 1px solid #FFD0B3;" onclick="showToast('Task rewards coming soon.', 'info'); return false;">
+            <div class="home-info-icon orange" style="background: linear-gradient(135deg, #FF6600, #FF8533); color: #fff;"><span data-ic="gift"></span></div>
+            <div class="home-info-content">
+                <div class="home-info-title" style="color: #FF6600;">TASK REWARDS CENTER</div>
+                <div class="home-info-value" style="font-size: 17px; font-weight: 800;">Complete Tasks & Earn Bonus</div>
+            </div>
+            <span style="font-size: 11px; font-weight: 800; background: #FF6600; color: #fff; padding: 4px 10px; border-radius: 99px;">Open &rsaquo;</span>
+        </a>
+
+        <a href="history.html" class="home-info-card h-glass">
+            <div class="home-info-icon green" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(22, 163, 74, 0.12)); color: #16A34A;"><span data-ic="chart"></span></div>
+            <div class="home-info-content">
+                <div class="home-info-title" style="color: #16A34A;">TOTAL INCOME</div>
+                <div class="home-info-value" data-total-income>₹0.00</div>
+            </div>
+            <div class="home-info-chevron">›</div>
+        </a>
+
+        <a href="history.html" class="home-info-card h-glass">
+            <div class="home-info-icon blue">↓</div>
+            <div class="home-info-content">
+                <div class="home-info-title">TODAY RECEIVE</div>
+                <div class="home-info-value" data-today-receive>₹0.00</div>
+            </div>
+            <div class="home-info-chevron">›</div>
+        </a>
+
+        <a href="team.html" class="home-info-card h-glass">
+            <div class="home-info-icon orange"><span data-ic="users"></span></div>
+            <div class="home-info-content">
+                <div class="home-info-title">REFERRAL COMMISSION</div>
+                <div class="home-info-value" data-team-commission>₹0.00</div>
+            </div>
+            <div class="home-info-chevron">›</div>
+        </a>
+
+        <a href="../apk/TirangaPay-v1.0.0.apk" class="home-info-card h-glass" style="background: linear-gradient(135deg, rgba(240, 249, 255, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%); border: 1px solid #BAE6FD;">
+            <div class="home-info-icon blue" style="background: linear-gradient(135deg, #0284C7, #38BDF8); color: #fff;"><span data-ic="rocket"></span></div>
+            <div class="home-info-content">
+                <div class="home-info-title" style="color: #0284C7;">ANDROID APPLICATION</div>
+                <div class="home-info-value" style="font-size: 15px; font-weight: 800;">Download TirangaPay APK</div>
+            </div>
+            <span style="font-size: 11px; font-weight: 800; background: #0284C7; color: #fff; padding: 4px 10px; border-radius: 99px;">Get App &rsaquo;</span>
+        </a>
+
+        <!-- Guidelines & Additional Details Section -->
+        <div style="margin-top: 14px;">
+            <div class="form-card guidelines-card" style="margin-top: 16px; padding: 18px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid var(--border); box-shadow: var(--card-shadow);"><div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleGuidelines(this)">  <div style="display: flex; align-items: center; gap: 12px;">    <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0DF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;"><span data-ic="book"></span></div>    <div>      <div style="font-size: 15px; font-weight: 800; color: var(--text);">Platform Overview &amp; Getting Started Guidelines</div>      <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Step-by-step guide & how it works</div>    </div>  </div>  <span class="guidelines-arrow" style="font-size: 16px; color: var(--primary); transition: transform 0.3s; font-weight: 800;">&#9660;</span></div><div class="guidelines-content" style="display: block; margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;"><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">1</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Instant Top-Up &amp; Multi-Currency Deposit</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Deposit INR via official UPI or USDT TRC20 with high exchange rates and instant automated top-up bonuses.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">2</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Daily Income &amp; Quota Packages</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Activate deposit packages to receive daily earnings credited automatically to your account balance.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">3</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Refer Friends &amp; Earn Commission</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Share your unique referral link to grow your team and earn commission. Track your team on the Team page.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">4</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Instant Bank Withdrawals</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Withdraw your funds at any time through your UPI ID. Admin processes payouts after approval.</div>  </div></div></div></div>
+        </div>
+
+    </div>
+
+    <!-- Floating Chat FAB -->
+    <a href="pages/guest-chat.html" class="home-chat-fab"><span data-ic="chat"></span></a>
+
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-item active">
+        <span class="nav-icon" data-ic="home"></span>
+        <span>Home</span>
+    </a>
+    <a href="deposit.html" class="nav-item">
+        <span class="nav-icon" data-ic="receive"></span>
+        <span>Deposit</span>
+    </a>
+    <a href="withdraw.html" class="nav-item">
+        <span class="nav-icon" data-ic="bank"></span>
+        <span>Withdraw</span>
+    </a>
+    <a href="team.html" class="nav-item">
+        <span class="nav-icon" data-ic="users"></span>
+        <span>Team</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon" data-ic="user"></span>
+        <span>Me</span>
+    </a>
+</nav>
+
+<script src="assets/js/app.js"></script>
+<script>
+let currentEmailKey = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) {
+        window.location.href = 'login.html';
+        return;
+    }
+    currentEmailKey = tpEmailKey(session.email);
+
+    tpRef('users/' + currentEmailKey).once('value').then(async snap => {
+        const u = snap.val();
+        if (!u) {
+            tpClearSession();
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Wallet balance
+        const wallet = Number(u.wallet || 0);
+        const balEl = document.querySelector('[data-wallet-balance]');
+        if (balEl) balEl.textContent = '₹' + wallet.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+        // Status awareness (admin-controlled)
+        renderStatus(u);
+
+        // Admin-controlled banners + broadcast
+        loadPlatformContent();
+
+        // Wallet ledger totals
+        try {
+            const led = await tpRef('wallet_ledger/' + currentEmailKey).once('value');
+            const raw = led.val() || {};
+            let totalIncome = 0;
+            let todayReceive = 0;
+            const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+            Object.values(raw).forEach(t => {
+                if (t.type === 'credit' && t.amount > 0) {
+                    totalIncome += Number(t.amount || 0);
+                    if (t.created_at >= todayStart.getTime()) todayReceive += Number(t.amount || 0);
+                }
+            });
+            const fm = n => '₹' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            const ti = document.querySelector('[data-total-income]');
+            const tr = document.querySelector('[data-today-receive]');
+            if (ti) ti.textContent = fm(totalIncome);
+            if (tr) tr.textContent = fm(todayReceive);
+        } catch (e) { /* ignore */ }
+
+        // Referral commission card: show team size
+        const tc = document.querySelector('[data-team-commission]');
+        if (tc) tc.textContent = (u.team_count || 0) + (u.team_count === 1 ? ' member' : ' members');
+    }).catch(() => {
+        showToast('Error loading account. Check Firebase rules.', 'error');
+    });
+});
+
+async function loadPlatformContent() {
+    try {
+        const ps = await tpLoadPlatformSettings();
+
+        // Banners from admin settings (fall back to local images)
+        const bImgs = document.querySelectorAll('#heroSliderTrack .hero-banner-img');
+        const urls = [ps.banner1, ps.banner2, ps.banner3];
+        if (bImgs.length) {
+            bImgs.forEach((img, i) => {
+                const url = urls[i];
+                if (url) img.src = url;
+            });
+        }
+
+        // Broadcast banner (admin-controlled)
+        let bc = null;
+        try { const s = await tpRef('broadcast').once('value'); bc = s.val(); } catch (e) {}
+        const br = document.getElementById('homeBroadcast');
+        if (bc && bc.text) {
+            br.style.display = 'flex';
+            br.style.alignItems = 'center';
+            br.innerHTML = IC_svg('broadcast') + ' ' + escapeHtml(bc.text);
+            const type = bc.type || 'info';
+            const styles = {
+                info: { bg: 'linear-gradient(135deg,#E0F2FE,#EFF8FF)', fg: '#0369A1', bd: '#BAE6FD' },
+                success: { bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', fg: '#15803D', bd: '#86EFAC' },
+                warn: { bg: 'linear-gradient(135deg,#FEF3C7,#FFFBEB)', fg: '#B45309', bd: '#FDE68A' }
+            };
+            const s2 = styles[type] || styles.info;
+            br.style.background = s2.bg; br.style.color = s2.fg; br.style.border = '1px solid ' + s2.bd;
+        }
+    } catch (e) { /* ignore */ }
+}
+
+function renderStatus(u) {
+    const banner = document.getElementById('homeStatusBanner');
+    if (u.status === 'pending') {
+        banner.style.display = 'flex';
+        banner.style.background = 'linear-gradient(135deg, #FEF3C7, #FFFBEB)';
+        banner.style.color = '#B45309';
+        banner.style.border = '1px solid #FDE68A';
+        banner.innerHTML = IC_svg('clock') + ' Your account is pending admin approval. Deposits & withdrawals will open after approval.';
+    } else if (u.status === 'blocked') {
+        banner.style.display = 'flex';
+        banner.style.background = 'linear-gradient(135deg, #FEE2E2, #FFF1F2)';
+        banner.style.color = '#B91C1C';
+        banner.style.border = '1px solid #FCA5A5';
+        banner.innerHTML = IC_svg('alert') + ' Your account has been blocked by admin. Contact support via Live Chat.';
+    } else {
+        banner.style.display = 'flex';
+        banner.style.background = 'linear-gradient(135deg, #DCFCE7, #F0FDF4)';
+        banner.style.color = '#15803D';
+        banner.style.border = '1px solid #86EFAC';
+        banner.innerHTML = IC_svg('check') + ' Your account is approved. All systems active.';
+    }
+}
+
+function logoutUser() {
+    const s = tpGetSession();
+    if (s.token) tpRef('sessions/' + s.token).remove().catch(() => {});
+    tpClearSession();
+    window.location.href = 'login.html';
+}
+
+/* ---------- Banner slider ---------- */
+(function() {
+    const track = document.getElementById('heroSliderTrack');
+    const dots = document.querySelectorAll('.hero-dot');
+    if (!track) return;
+
+    const totalSlides = track.children.length;
+    if (totalSlides <= 1) return;
+
+    let currentIndex = 0;
+    let autoSlideTimer = null;
+
+    function updateSlidePosition() {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        dots.forEach((dot, idx) => {
+            if (idx === currentIndex) dot.classList.add('active');
+            else dot.classList.remove('active');
+        });
+    }
+
+    window.nextHeroSlide = function() {
+        currentIndex = (currentIndex + 1) % totalSlides;
+        updateSlidePosition();
+        resetAutoSlideTimer();
+    };
+
+    window.prevHeroSlide = function() {
+        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+        updateSlidePosition();
+        resetAutoSlideTimer();
+    };
+
+    window.goToHeroSlide = function(index) {
+        currentIndex = index;
+        updateSlidePosition();
+        resetAutoSlideTimer();
+    };
+
+    function startAutoSlideTimer() {
+        stopAutoSlideTimer();
+        autoSlideTimer = setInterval(() => {
+            currentIndex = (currentIndex + 1) % totalSlides;
+            updateSlidePosition();
+        }, 10000);
+    }
+
+    function stopAutoSlideTimer() {
+        if (autoSlideTimer) { clearInterval(autoSlideTimer); autoSlideTimer = null; }
+    }
+
+    function resetAutoSlideTimer() { startAutoSlideTimer(); }
+
+    let startX = 0, endX = 0;
+    const container = document.getElementById('heroSliderContainer');
+    if (container) {
+        container.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+        container.addEventListener('touchend', (e) => {
+            endX = e.changedTouches[0].clientX;
+            const diffX = startX - endX;
+            if (Math.abs(diffX) > 40) {
+                if (diffX > 0) nextHeroSlide();
+                else prevHeroSlide();
+            }
+        }, { passive: true });
+    }
+
+    startAutoSlideTimer();
+})();
+</script>
+</body>
+</html>

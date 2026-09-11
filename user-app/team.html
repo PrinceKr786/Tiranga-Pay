@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Team - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+    <style>
+    .team-page {
+        font-family: 'Manrope', sans-serif;
+        color: #1B2430;
+        background: linear-gradient(180deg, #E8EEF6 0%, #DCE6F2 50%, #E9EFF7 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        padding-bottom: 90px;
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .team-page::before, .team-page::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .team-page::before {
+        width: 300px; height: 300px;
+        background: #9DBBE8; opacity: 0.6;
+        top: -80px; left: -100px;
+    }
+    .team-page::after {
+        width: 280px; height: 280px;
+        background: #FFB98A; opacity: 0.5;
+        top: 260px; right: -120px;
+    }
+    .team-page > * { position: relative; z-index: 1; }
+
+    /* Glass Header */
+    .team-header {
+        position: sticky; top: 0; z-index: 100;
+        display: flex; gap: 12px; align-items: center;
+        padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 14px;
+        background: rgba(232, 238, 246, 0.7);
+        backdrop-filter: blur(24px) saturate(1.4);
+        -webkit-backdrop-filter: blur(24px) saturate(1.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: 0 8px 24px rgba(60, 80, 120, 0.08);
+    }
+    .team-header .back-circle {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #fff;
+        box-shadow: 0 6px 14px rgba(60, 80, 120, 0.12);
+        display: flex; align-items: center; justify-content: center;
+        color: #5A6B85; font-size: 16px; font-weight: 700;
+        cursor: pointer; text-decoration: none; flex: none;
+        transition: transform 0.15s;
+    }
+    .team-header .back-circle:active { transform: scale(0.92); }
+    .team-header .title-text {
+        font-family: 'Sora', sans-serif;
+        font-size: 18px; font-weight: 800;
+        letter-spacing: -0.3px; color: #1B2430; margin: 0;
+    }
+
+    .team-content { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Glass card base */
+    .t-glass {
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.12), inset 0 1px 0 #fff;
+        border-radius: 22px;
+    }
+
+    /* Orange Earning Card */
+    .t-earning-card {
+        background: linear-gradient(135deg, rgba(255, 122, 61, 0.92), rgba(242, 91, 18, 0.92));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #fff;
+        border-radius: 22px;
+        padding: 22px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 24px 44px -20px rgba(242, 91, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        position: relative; overflow: hidden;
+    }
+    .t-earning-card::after {
+        content: ""; position: absolute;
+        right: -30px; top: -50px;
+        width: 150px; height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+    }
+    .t-earning-card > * { position: relative; z-index: 2; }
+    .t-earning-label {
+        font-size: 11px; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 1.1px;
+        color: rgba(255, 255, 255, 0.75);
+    }
+    .t-earning-amount {
+        font-size: 32px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        margin-top: 4px;
+    }
+
+    /* 2x2 Stats Grid */
+    .t-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .t-stat-card {
+        padding: 16px 14px;
+        text-align: center;
+    }
+    .t-stat-value {
+        font-size: 20px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        color: #E85D1F;
+    }
+    .t-stat-label {
+        font-size: 10.5px; font-weight: 700;
+        color: #7A8AA3; margin-top: 4px;
+    }
+
+    /* Invite Code Box */
+    .t-invite-section h4, .t-members-section h4 {
+        font-family: 'Sora', sans-serif;
+        font-size: 14px; font-weight: 800;
+        color: #1B2430; margin: 0 0 8px;
+    }
+    .t-invite-box {
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: 2px dashed rgba(242, 91, 18, 0.4);
+    }
+    .t-invite-link {
+        font-size: 12px; font-weight: 700;
+        color: #5A6B85; font-family: 'Sora', sans-serif;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .t-copy-btn {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        background: #1B2430;
+        color: #fff; border: none;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; cursor: pointer; flex-shrink: 0;
+        transition: transform 0.15s;
+    }
+    .t-copy-btn:active { transform: scale(0.92); }
+
+    /* Members List */
+    .t-no-members {
+        text-align: center;
+        padding: 30px;
+        color: #7A8AA3;
+        font-size: 14px; font-weight: 700;
+    }
+    .t-member-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(122, 138, 163, 0.12);
+    }
+    .t-member-row:last-child { border-bottom: none; }
+    .t-member-name {
+        font-weight: 800; font-size: 14px; color: #1B2430;
+        font-family: 'Sora', sans-serif;
+    }
+    .t-member-email {
+        font-size: 11px; color: #7A8AA3; margin-top: 2px; font-weight: 600;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .t-member-dep-label {
+        font-size: 10px; color: #7A8AA3; font-weight: 700; text-transform: uppercase; text-align: right;
+    }
+    .t-member-dep-val {
+        font-size: 14px; font-weight: 800; color: #E85D1F; text-align: right;
+        font-family: 'Sora', sans-serif;
+    }
+    </style>
+</head>
+<body>
+
+<div class="team-page">
+
+    <!-- Sticky Glass Header -->
+    <nav class="team-header">
+        <a href="dashboard.html" class="back-circle">&lsaquo;</a>
+        <h3 class="title-text">Team</h3>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="team-content">
+
+        <!-- Orange Earning Card -->
+        <div class="t-earning-card">
+            <div class="t-earning-label">Your Earning</div>
+            <div class="t-earning-amount" data-total-commission>₹0.00</div>
+        </div>
+
+        <!-- 2x2 Stats Grid -->
+        <div class="t-stats-grid">
+            <div class="t-stat-card t-glass">
+                <div class="t-stat-value" data-today-recharge>₹0.00</div>
+                <div class="t-stat-label">Today Team Recharge</div>
+            </div>
+
+            <div class="t-stat-card t-glass">
+                <div class="t-stat-value" data-today-members>0</div>
+                <div class="t-stat-label">Today Team Members</div>
+            </div>
+
+            <div class="t-stat-card t-glass">
+                <div class="t-stat-value" data-total-recharge>₹0.00</div>
+                <div class="t-stat-label">Total Team Recharge</div>
+            </div>
+
+            <div class="t-stat-card t-glass">
+                <div class="t-stat-value" data-total-members>0</div>
+                <div class="t-stat-label">Total Team Members</div>
+            </div>
+        </div>
+
+        <!-- Referral Bonus Highlight Card -->
+        <div style="background: linear-gradient(135deg, rgba(255, 122, 61, 0.15), rgba(242, 91, 18, 0.22)); border: 1.5px solid rgba(242, 91, 18, 0.4); border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: #FF6600; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);">
+                <span data-ic="gift"></span>
+            </div>
+            <div>
+                <div style="font-size: 14px; font-weight: 800; color: #E85D1F; font-family: 'Sora', sans-serif;" data-ref-title>Earn ₹20 on Every Referral!</div>
+                <div style="font-size: 11.5px; color: #5A6B85; font-weight: 600; margin-top: 2px;" data-ref-sub>Share your invite link & get ₹20 instantly whenever someone joins!</div>
+            </div>
+        </div>
+
+        <!-- Invite Code Section -->
+        <div class="t-invite-section">
+            <h4>Invite Code</h4>
+            <div class="t-invite-box t-glass">
+                <div class="t-invite-link" id="inviteLinkText">Loading...</div>
+                <button type="button" class="t-copy-btn" id="inviteCopyBtn" title="Copy link">
+                    <span data-ic="copy"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Team Detail Section -->
+        <div class="t-members-section">
+            <h4>Team Detail</h4>
+            <div id="teamList">
+                <div class="t-no-members t-glass">Loading your team...</div>
+            </div>
+        </div>
+
+        <!-- Guidelines Section -->
+        <div class="form-card guidelines-card" style="margin-top: 16px; padding: 18px 20px; border-radius: 20px; background: #FFFFFF; border: 1px solid var(--border); box-shadow: var(--card-shadow);"><div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleGuidelines(this)">  <div style="display: flex; align-items: center; gap: 12px;">    <div style="width: 38px; height: 38px; border-radius: 12px; background: #FFF0DF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;"><span data-ic="book"></span></div>    <div>      <div style="font-size: 15px; font-weight: 800; color: var(--text);">Team &amp; Referral Guidelines</div>      <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Step-by-step guide & how it works</div>    </div>  </div>  <span class="guidelines-arrow" style="font-size: 16px; color: var(--primary); transition: transform 0.3s; font-weight: 800;">&#9660;</span></div><div class="guidelines-content" style="display: block; margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;"><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">1</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Share Your Unique Referral Code</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Copy your referral code or invitation link and share it with your friends via WhatsApp, Telegram, or social media.</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">2</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Earn Instant ₹20 on Every Referral</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Whenever any friend registers using your referral link, you receive an instant ₹20 bonus reward credited straight to your wallet balance!</div>  </div></div><div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">3</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Earn 4% Recharge Commission</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">Receive 4% commission automatically credited to your wallet every time a team member completes an INR or USDT recharge.</div>  </div></div><div style="display: flex; gap: 12px; align-items: flex-start;">  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-gradient); color: #FFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(255,138,0,0.3);">4</div>  <div style="flex: 1;">    <div style="font-size: 13px; font-weight: 700; color: var(--text);">Monitor Team Growth Real-Time</div>    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.45;">View total referrals, daily team deposit volumes, and daily commission earnings live on your team dashboard.</div>  </div></div></div></div>
+    </div>
+
+</div>
+
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon" data-ic="home"></span>
+        <span>Home</span>
+    </a>
+    <a href="deposit.html" class="nav-item">
+        <span class="nav-icon" data-ic="receive"></span>
+        <span>Deposit</span>
+    </a>
+    <a href="withdraw.html" class="nav-item">
+        <span class="nav-icon" data-ic="bank"></span>
+        <span>Withdraw</span>
+    </a>
+    <a href="team.html" class="nav-item active">
+        <span class="nav-icon" data-ic="users"></span>
+        <span>Team</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon" data-ic="user"></span>
+        <span>Me</span>
+    </a>
+</nav>
+
+<script>
+const INR = n => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+let currentEmailKey = '';
+let myReferralCode = '';
+let myReferralLink = '';
+
+function teamDayStart() {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.floor(d.getTime() / 1000);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    const ps = await tpLoadPlatformSettings();
+    const refBonus = Number(ps.referral_bonus) || TP_REFERRAL_BONUS;
+    const refComm = (Number(ps.referral_commission) || 0) / 100 || TP_REFERRAL_COMMISSION;
+
+    const bonusCardTitle = document.querySelector('[data-ref-title]');
+    const bonusCardSub = document.querySelector('[data-ref-sub]');
+    if (bonusCardTitle) bonusCardTitle.textContent = 'Earn ₹' + refBonus + ' on Every Referral!';
+    if (bonusCardSub) bonusCardSub.textContent = 'Share your invite link & get ₹' + refBonus + ' instantly whenever someone joins!';
+
+    const snap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
+    const u = snap && snap.val();
+    if (!u) { tpClearSession(); window.location.href = 'login.html'; return; }
+
+    myReferralCode = u.referral_code || '';
+    myReferralLink = new URL('register.html?ref=' + encodeURIComponent(myReferralCode), window.location.href).href;
+    document.getElementById('inviteLinkText').textContent = myReferralLink;
+    document.getElementById('inviteLinkText').title = myReferralLink;
+    document.getElementById('inviteCopyBtn').onclick = () => { copyText(myReferralLink); };
+
+    // Load members + deposits
+    let members = [];
+    let depositsByMember = {};
+    try {
+        const all = await tpRef('users').once('value');
+        const raw = all.val() || {};
+        const todayStart = teamDayStart();
+
+        Object.keys(raw).forEach(ek => {
+            const usr = raw[ek];
+            if (usr.referred_by === currentEmailKey) {
+                members.push({ key: ek, ...usr });
+            }
+        });
+
+        // Aggregate deposits for all members in one pass
+        const depSnap = await tpRef('deposits').once('value').catch(() => null);
+        const depRaw = (depSnap && depSnap.val()) || {};
+        members.forEach(m => {
+            const list = depRaw[m.key] || {};
+            Object.values(list).forEach(d => {
+                if (!depositsByMember[m.key]) depositsByMember[m.key] = [];
+                depositsByMember[m.key].push(d);
+            });
+            if (!depositsByMember[m.key]) depositsByMember[m.key] = [];
+        });
+
+        // Compute stats
+        let totalRecharge = 0;
+        let todayRecharge = 0;
+        let totalEarn = 0;
+        let todayMembers = 0;
+
+        members.forEach(m => {
+            const approved = (depositsByMember[m.key] || []).filter(d => d.status === 'approved');
+            const memberTotal = approved.reduce((s, d) => s + Number(d.amount || 0), 0);
+            const memberToday = approved.filter(d => (d.created_at || 0) >= todayStart).reduce((s, d) => s + Number(d.amount || 0), 0);
+            totalRecharge += memberTotal;
+            todayRecharge += memberToday;
+            if ((m.created_at || 0) >= todayStart && m.status === 'approved') todayMembers++;
+        });
+
+        const membersCount = members.length;
+        totalEarn = membersCount * refBonus + totalRecharge * refComm;
+
+        document.querySelector('[data-total-commission]').textContent = INR(totalEarn);
+        document.querySelector('[data-today-recharge]').textContent = INR(todayRecharge);
+        document.querySelector('[data-today-members]').textContent = String(todayMembers);
+        document.querySelector('[data-total-recharge]').textContent = INR(totalRecharge);
+        document.querySelector('[data-total-members]').textContent = String(membersCount);
+
+        renderTeam(members, depositsByMember);
+    } catch (e) {
+        const list = document.getElementById('teamList');
+        list.innerHTML = '<div class="t-no-members t-glass">Failed to load team.</div>';
+    }
+});
+
+function renderTeam(members, depositsByMember) {
+    const list = document.getElementById('teamList');
+    if (!members.length) {
+        list.innerHTML = '<div class="t-no-members t-glass">No team members yet</div>';
+        return;
+    }
+    list.innerHTML = members.slice(0, 20).map(m => {
+        const approved = (depositsByMember[m.key] || []).filter(d => d.status === 'approved');
+        const memberTotal = approved.reduce((s, d) => s + Number(d.amount || 0), 0);
+        const st = m.status === 'approved' ? IC_svg('check') : (m.status === 'blocked' ? IC_svg('close') : '•');
+        const stColor = m.status === 'approved' ? '#15803D' : (m.status === 'blocked' ? '#B91C1C' : '#B45309');
+        return `
+        <div class="t-glass" style="overflow:hidden;">
+            <div class="t-member-row">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; border-radius:50%; background: linear-gradient(135deg, rgba(255,122,61,0.92), rgba(242,91,18,0.92)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0;">${escapeHtml(String(m.full_name || 'U').charAt(0).toUpperCase())}</div>
+                    <div>
+                        <div class="t-member-name">${escapeHtml(m.full_name || '—')} <span style="font-size:10px; color:${stColor};">${st}</span></div>
+                        <div class="t-member-email" style="max-width:180px;">${escapeHtml(m.email || '—')}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="t-member-dep-label">Recharge</div>
+                    <div class="t-member-dep-val">${INR(memberTotal)}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+</script>
+</body>
+</html>

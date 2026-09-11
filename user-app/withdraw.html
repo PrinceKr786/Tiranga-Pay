@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Withdraw - Tiranga Pay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK (user side config) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <style>
+    /* ===== Withdraw Page – Liquid Silver Glass (BasePayz Exact Match) ===== */
+    .wd-page {
+        font-family: 'Manrope', sans-serif;
+        color: #1B2430;
+        background: linear-gradient(180deg, #E8EEF6 0%, #DCE6F2 50%, #E9EFF7 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        padding-bottom: 130px;
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .wd-page::before, .wd-page::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .wd-page::before {
+        width: 300px; height: 300px;
+        background: #9DBBE8; opacity: 0.6;
+        top: -80px; left: -100px;
+    }
+    .wd-page::after {
+        width: 280px; height: 280px;
+        background: #FFB98A; opacity: 0.5;
+        top: 260px; right: -120px;
+    }
+    .wd-page > * { position: relative; z-index: 1; }
+
+    /* ===== Sticky glass header ===== */
+    .wd-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 14px;
+        background: rgba(232, 238, 246, 0.7);
+        backdrop-filter: blur(24px) saturate(1.4);
+        -webkit-backdrop-filter: blur(24px) saturate(1.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: 0 8px 24px rgba(60, 80, 120, 0.08);
+    }
+    .wd-header .wd-back {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #fff;
+        box-shadow: 0 6px 14px rgba(60, 80, 120, 0.12);
+        display: flex; align-items: center; justify-content: center;
+        color: #5A6B85; font-size: 16px; font-weight: 700;
+        cursor: pointer; text-decoration: none; flex: none;
+        transition: transform 0.15s;
+    }
+    .wd-header .wd-back:active { transform: scale(0.92); }
+    .wd-header .wd-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 18px; font-weight: 800;
+        letter-spacing: -0.3px; color: #1B2430;
+        margin: 0;
+    }
+
+    /* ===== Content ===== */
+    .wd-content { padding: 10px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ===== Glass base ===== */
+    .wd-glass {
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(30px) saturate(1.4);
+        -webkit-backdrop-filter: blur(30px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 30px rgba(60, 80, 120, 0.12), inset 0 1px 0 #fff;
+        border-radius: 24px;
+    }
+
+    /* ===== Balance Card ===== */
+    .wd-balance-card {
+        background: linear-gradient(135deg, rgba(255, 122, 61, 0.92), rgba(242, 91, 18, 0.92));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #fff;
+        border-radius: 22px;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 24px 44px -20px rgba(242, 91, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        position: relative; overflow: hidden;
+    }
+    .wd-balance-card::after {
+        content: ""; position: absolute;
+        right: -30px; top: -50px;
+        width: 150px; height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+    }
+    .wd-balance-card > * { position: relative; z-index: 2; }
+    .wd-balance-label {
+        font-size: 10px; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 1.1px;
+        color: rgba(255, 255, 255, 0.75);
+        font-family: 'Manrope', sans-serif;
+    }
+    .wd-balance-amount {
+        font-size: 32px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        margin: 6px 0 4px;
+    }
+    .wd-balance-limit {
+        font-size: 11px; font-weight: 700;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ===== Payout UPI Card ===== */
+    .wd-bank-card {
+        position: relative;
+        border-radius: 24px;
+        padding: 18px;
+        overflow: hidden;
+    }
+    .wd-bank-card::before {
+        content: ""; position: absolute;
+        left: 0; top: 0; bottom: 0; width: 5px;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+    }
+    .wd-bank-top { display: flex; align-items: center; gap: 14px; }
+    .wd-bank-icon {
+        width: 54px; height: 54px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(255, 140, 80, 0.22), rgba(242, 91, 18, 0.12));
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; flex: none;
+        box-shadow: 0 6px 14px rgba(242, 91, 18, 0.15);
+    }
+    .wd-bank-info { flex: 1; min-width: 0; }
+    .wd-bank-name {
+        margin: 0; font-size: 17px; font-weight: 800;
+        font-family: 'Sora', sans-serif; color: #1B2430;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+    .wd-bank-acc {
+        display: block; font-size: 14px;
+        color: #5A6B85; margin-top: 3px;
+        font-weight: 800; font-family: 'Sora', sans-serif;
+        letter-spacing: 1px;
+    }
+    .wd-bank-holder {
+        display: block; font-size: 12px;
+        color: #7A8AA3; margin-top: 4px; font-weight: 700;
+    }
+    .wd-bank-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(122, 138, 163, 0.2), transparent);
+        margin: 14px 0;
+    }
+    .wd-bank-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .wd-status-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        padding: 8px 14px; border-radius: 99px;
+        text-transform: uppercase; letter-spacing: 0.6px;
+        color: #2E9A6B;
+        background: rgba(46, 154, 107, 0.14);
+        border: 1px solid rgba(46, 154, 107, 0.3);
+    }
+    .wd-status-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%; background: currentColor;
+        box-shadow: 0 0 0 3px rgba(46, 154, 107, 0.15);
+    }
+    .wd-change-link {
+        font-size: 12px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        color: #F25B12; text-decoration: none;
+        padding: 8px 14px; border-radius: 99px;
+        background: rgba(242, 91, 18, 0.1);
+        border: 1px solid rgba(242, 91, 18, 0.2);
+        transition: transform 0.15s;
+    }
+    .wd-change-link:active { transform: scale(0.95); }
+
+    /* ===== No UPI Linked ===== */
+    .wd-no-data {
+        text-align: center;
+        padding: 30px;
+        color: #7A8AA3;
+        font-size: 14px; font-weight: 700;
+        border-radius: 22px;
+    }
+
+    /* ===== Withdrawal Form Card ===== */
+    .wd-form-card { padding: 20px; }
+    .wd-form-card h3 {
+        font-family: 'Sora', sans-serif;
+        font-size: 15px; font-weight: 800;
+        color: #1B2430; margin: 0 0 16px;
+    }
+    .wd-input-wrap { position: relative; margin-bottom: 12px; }
+    .wd-input-wrap input {
+        width: 100%; height: 50px;
+        border-radius: 14px;
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #1B2430;
+        padding: 0 16px 0 52px;
+        font-size: 15px; font-family: 'Sora', sans-serif; font-weight: 700;
+        outline: none;
+        box-shadow: 0 8px 22px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .wd-input-wrap input:focus {
+        border-color: #FF7A3D;
+        box-shadow: 0 8px 22px rgba(242, 91, 18, 0.2), inset 0 1px 0 #fff;
+    }
+    .wd-input-wrap input::placeholder { color: #AAB4C5; font-weight: 600; }
+    .wd-input-icon {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        width: 32px; height: 32px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #FF7A3D, #F25B12);
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 800;
+        box-shadow: 0 4px 10px rgba(242, 91, 18, 0.3);
+    }
+    .wd-submit-btn {
+        width: 100%; height: 50px;
+        border-radius: 15px; border: none;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff;
+        font-size: 14px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: 0 16px 30px -10px rgba(242, 91, 18, 0.6), inset 0 1.5px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+        margin-top: 6px;
+    }
+    .wd-submit-btn:active { transform: scale(0.98); }
+    .wd-input-note {
+        font-size: 11px; font-weight: 700;
+        color: #7A8AA3; margin: -4px 0 12px; line-height: 1.5;
+    }
+
+    /* ===== History Section ===== */
+    .wd-section-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 16px; font-weight: 800;
+        color: #1B2430; letter-spacing: -0.3px;
+        margin: 6px 0 0;
+    }
+    .wd-history-card {
+        position: relative;
+        border-radius: 24px;
+        padding: 18px;
+        overflow: hidden;
+    }
+    .wd-history-card::before {
+        content: ""; position: absolute;
+        left: 0; top: 0; bottom: 0; width: 5px;
+    }
+    .wd-history-card.pending::before { background: linear-gradient(180deg, #F59E0B, #D97706); }
+    .wd-history-card.approved::before { background: linear-gradient(180deg, #22C55E, #16A34A); }
+    .wd-history-card.rejected::before { background: linear-gradient(180deg, #EF4444, #DC2626); }
+    .wd-history-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .wd-history-amount {
+        font-size: 20px; font-weight: 800;
+        font-family: 'Sora', sans-serif; color: #1B2430;
+    }
+    .wd-history-date {
+        font-size: 11px; font-weight: 700;
+        color: #7A8AA3; margin-top: 3px;
+    }
+    .wd-history-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 800;
+        font-family: 'Sora', sans-serif;
+        padding: 6px 12px; border-radius: 99px;
+        text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .wd-history-badge.pending {
+        color: #B45309;
+        background: rgba(245, 158, 11, 0.14);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .wd-history-badge.approved {
+        color: #15803D;
+        background: rgba(34, 197, 94, 0.14);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .wd-history-badge.rejected {
+        color: #DC2626;
+        background: rgba(239, 68, 68, 0.14);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .wd-history-badge .dot {
+        width: 6px; height: 6px;
+        border-radius: 50%; background: currentColor;
+    }
+    .wd-history-upi {
+        font-size: 11px; font-weight: 700;
+        color: #7A8AA3; margin-top: 8px;
+    }
+
+    /* ===== Floating Add Button ===== */
+    .wd-add-btn {
+        position: fixed;
+        bottom: 80px; left: 50%; transform: translateX(-50%);
+        width: 60px; height: 60px;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff; border-radius: 20px;
+        font-size: 28px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; z-index: 55; border: none;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 16px 30px -10px rgba(242, 91, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+        animation: wdPulse 2.4s ease-in-out infinite;
+        text-decoration: none;
+    }
+    .wd-add-btn:active { transform: translateX(-50%) scale(0.9); }
+    @keyframes wdPulse {
+        0%, 100% { box-shadow: 0 16px 30px -10px rgba(242,91,18,.6), 0 0 0 0 rgba(242,91,18,.35), inset 0 1px 0 rgba(255,255,255,.45); }
+        50% { box-shadow: 0 16px 30px -10px rgba(242,91,18,.6), 0 0 0 12px rgba(242,91,18,0), inset 0 1px 0 rgba(255,255,255,.45); }
+    }
+
+    /* ===== MPIN Bottom Sheet Modal ===== */
+    .wd-mpin-overlay {
+        position: fixed; inset: 0;
+        background: rgba(30, 40, 60, 0.45);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        display: flex; align-items: flex-end; justify-content: center;
+        z-index: 5000;
+        transition: opacity 0.2s;
+    }
+    .wd-mpin-overlay.hidden { display: none; }
+    .wd-mpin-sheet {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(28px) saturate(1.4);
+        -webkit-backdrop-filter: blur(28px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.95);
+        border-bottom: none;
+        padding: 28px 22px;
+        border-radius: 28px 28px 0 0;
+        max-width: 440px; width: 100%;
+        box-shadow: 0 -20px 50px rgba(30, 40, 60, 0.3), inset 0 1px 0 #fff;
+    }
+    .wd-mpin-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 19px; font-weight: 800;
+        color: #1B2430; letter-spacing: -0.3px;
+        margin: 0 0 6px; text-align: center;
+    }
+    .wd-mpin-sub {
+        font-size: 12.5px; font-weight: 700;
+        color: #7A8AA3; margin: 0 0 8px;
+        line-height: 1.5; text-align: center;
+    }
+    .wd-mpin-amount-display {
+        text-align: center; margin-bottom: 18px;
+        font-family: 'Sora', sans-serif;
+        font-size: 24px; font-weight: 800; color: #F25B12;
+    }
+    .wd-otp-box {
+        display: flex; justify-content: center; gap: 10px;
+        margin-bottom: 6px;
+    }
+    .wd-otp-input {
+        width: 46px; height: 54px;
+        text-align: center;
+        font-family: 'Sora', sans-serif;
+        font-size: 20px; font-weight: 800; color: #1B2430;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        border-radius: 14px;
+        box-shadow: 0 8px 22px rgba(60, 80, 120, 0.1), inset 0 1px 0 #fff;
+        outline: none; caret-color: #F25B12;
+        transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+        padding: 0;
+    }
+    .wd-otp-input:focus {
+        border-color: #FF7A3D;
+        box-shadow: 0 8px 22px rgba(242, 91, 18, 0.25), inset 0 1px 0 #fff;
+        transform: translateY(-2px);
+    }
+    .wd-otp-input::-webkit-outer-spin-button,
+    .wd-otp-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .wd-mpin-verify {
+        width: 100%; margin-top: 22px;
+        padding: 16px;
+        background: linear-gradient(180deg, #FF7A3D, #F25B12);
+        color: #fff; border: none; border-radius: 16px;
+        font-size: 15px; font-weight: 700;
+        font-family: 'Sora', sans-serif;
+        cursor: pointer;
+        box-shadow: 0 14px 26px -8px rgba(242, 91, 18, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.15s;
+    }
+    .wd-mpin-verify:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+<div class="wd-page">
+
+    <!-- Glass Header -->
+    <nav class="wd-header">
+        <a href="dashboard.html" class="wd-back">&lsaquo;</a>
+        <h3 class="wd-title">Withdraw</h3>
+    </nav>
+
+    <!-- Content -->
+    <div class="wd-content">
+
+        <!-- Orange Gradient Balance Card -->
+        <div class="wd-balance-card">
+            <div class="wd-balance-label">Available Balance</div>
+            <div class="wd-balance-amount" data-wallet-balance>₹0.00</div>
+            <div class="wd-balance-limit" id="withdrawLimitsText">Limit: loading...</div>
+        </div>
+
+        <!-- Payout UPI Card -->
+        <div id="upiCardWrap"></div>
+
+        <!-- Withdrawal Form -->
+        <div class="wd-glass wd-form-card" id="wdFormCard" style="display: none;">
+            <h3>Withdrawal Amount</h3>
+            <div class="wd-input-note">Enter the amount you want to withdraw to your UPI ID. Admin processes the UPI payout after approval.</div>
+            <form id="wdForm" onsubmit="event.preventDefault(); openMpinModal();">
+                <div class="wd-input-wrap">
+                    <span class="wd-input-icon">₹</span>
+                    <input type="number" id="wdAmountInput" inputmode="numeric" placeholder="Enter amount (INR)" min="1" step="1" required>
+                </div>
+                <div class="wd-input-wrap">
+                    <span class="wd-input-icon" data-ic="bank"></span>
+                    <input type="text" id="wdUpiInput" placeholder="Your UPI ID (you@upi)" required>
+                </div>
+                <button type="submit" class="wd-submit-btn">PROCEED TO WITHDRAW</button>
+            </form>
+        </div>
+
+        <!-- Withdrawal History -->
+        <h3 class="wd-section-title">Withdrawal History</h3>
+        <div id="wdHistoryList">
+            <div class="wd-glass wd-no-data">Loading...</div>
+        </div>
+
+    </div>
+
+    <!-- Floating Add Button (Only when NO UPI is linked) -->
+    <a href="bank-details.html" class="wd-add-btn" id="wdAddBtn" style="display: none;">+</a>
+
+    <!-- MPIN Bottom Sheet Modal -->
+    <div class="wd-mpin-overlay hidden" id="mpinOverlay" onclick="closeMpinModal()">
+        <div class="wd-mpin-sheet" onclick="event.stopPropagation()">
+            <h3 class="wd-mpin-title">Enter MPIN</h3>
+            <p class="wd-mpin-sub" id="mpinSub">Enter your 6-digit security PIN to confirm withdrawal</p>
+            <div class="wd-mpin-amount-display" id="mpinAmountDisplay">₹0.00</div>
+            <div class="wd-otp-box" id="mpinBox">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+                <input type="text" maxlength="1" class="wd-otp-input" inputmode="numeric" placeholder=" ">
+            </div>
+            <button type="button" class="wd-mpin-verify" onclick="submitWithdrawal()">Verify & Withdraw</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon" data-ic="home"></span>
+        <span>Home</span>
+    </a>
+    <a href="deposit.html" class="nav-item">
+        <span class="nav-icon" data-ic="receive"></span>
+        <span>Deposit</span>
+    </a>
+    <a href="withdraw.html" class="nav-item active">
+        <span class="nav-icon" data-ic="bank"></span>
+        <span>Withdraw</span>
+    </a>
+    <a href="team.html" class="nav-item">
+        <span class="nav-icon" data-ic="users"></span>
+        <span>Team</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon" data-ic="user"></span>
+        <span>Me</span>
+    </a>
+</nav>
+
+<script>
+/* ================= OTP-Style MPIN Input ================= */
+const mpinInputs = document.querySelectorAll('#mpinBox .wd-otp-input');
+mpinInputs.forEach((input, index) => {
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '');
+        if (input.value && index < mpinInputs.length - 1) {
+            mpinInputs[index + 1].focus();
+        }
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+            mpinInputs[index - 1].focus();
+        }
+    });
+});
+
+function getMpinValue() {
+    let mpin = '';
+    mpinInputs.forEach(i => mpin += i.value);
+    return mpin;
+}
+
+function clearMpin() {
+    mpinInputs.forEach(i => i.value = '');
+    if (mpinInputs[0]) mpinInputs[0].focus();
+}
+
+function scrollToForm() {
+    const card = document.getElementById('wdFormCard');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ================= Firebase wiring ================= */
+let currentEmailKey = '';
+let settings = { withdraw_min: 100, withdraw_max: 50000 };
+let userWallet = 0;
+let savedMpin = '';
+let confirmationId = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = tpGetSession();
+    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
+    currentEmailKey = tpEmailKey(session.email);
+
+    const [userSnap, setSnap] = await Promise.all([
+        tpRef('users/' + currentEmailKey).once('value').catch(() => null),
+        tpRef('settings').once('value').catch(() => null)
+    ]);
+    const u = userSnap && userSnap.val();
+    if (!u) { tpClearSession(); window.location.href = 'login.html'; return; }
+    if (u.status !== 'approved') {
+        showToast('Withdrawals open only for approved accounts.', 'error');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        return;
+    }
+    if (setSnap && setSnap.val()) settings = Object.assign(settings, setSnap.val());
+
+    userWallet = Number(u.wallet || 0);
+    savedMpin = u.mpin || '';
+    document.querySelector('[data-wallet-balance]').textContent = '₹' + userWallet.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    document.getElementById('withdrawLimitsText').textContent =
+        `Limit: ₹${Number(settings.withdraw_min).toLocaleString('en-IN')} – ₹${Number(settings.withdraw_max).toLocaleString('en-IN')}`;
+
+    renderUpiCard(u);
+    loadHistory();
+});
+
+function renderUpiCard(u) {
+    const wrap = document.getElementById('upiCardWrap');
+    const upi = (u.upi_id || '').trim();
+
+    if (upi) {
+        document.getElementById('wdFormCard').style.display = 'block';
+        document.getElementById('wdUpiInput').value = upi;
+        document.getElementById('wdAddBtn').style.display = 'none';
+        wrap.innerHTML = `
+        <div class="wd-glass wd-bank-card">
+            <div class="wd-bank-top">
+                <div class="wd-bank-icon">${IC_svg('bank')}</div>
+                <div class="wd-bank-info">
+                    <p class="wd-bank-name">UPI Payout Account</p>
+                    <span class="wd-bank-acc">${escapeHtml(upi)}</span>
+                    <span class="wd-bank-holder">Primary payout UPI ID</span>
+                </div>
+            </div>
+            <div class="wd-bank-divider"></div>
+            <div class="wd-bank-bottom">
+                <span class="wd-status-badge"><span class="wd-status-dot"></span> UPI Linked</span>
+                <a href="bank-details.html" class="wd-change-link">Manage</a>
+            </div>
+        </div>`;
+    } else {
+        wrap.innerHTML = `
+        <div class="wd-glass wd-no-data">
+            No UPI Linked
+            <div style="margin-top: 10px;">
+                <a href="bank-details.html" class="wd-change-link" style="display: inline-block;">+ Add UPI / Bank</a>
+            </div>
+        </div>`;
+        document.getElementById('wdAddBtn').style.display = 'flex';
+    }
+}
+
+async function loadHistory() {
+    const list = document.getElementById('wdHistoryList');
+    try {
+        const snap = await tpRef('withdrawals/' + currentEmailKey).once('value');
+        const raw = snap.val() || {};
+        const entries = Object.values(raw).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        if (!entries.length) {
+            list.innerHTML = '<div class="wd-glass wd-no-data">No withdrawal requests yet</div>';
+            return;
+        }
+        list.innerHTML = entries.map(w => {
+            const st = (w.status || 'pending').toLowerCase();
+            const badge = st === 'rejected' ? 'rejected' : (st === 'pending' ? 'pending' : 'approved');
+            const label = st === 'rejected' ? 'Rejected' : (st === 'pending' ? 'Pending' : 'Paid');
+            return `
+            <div class="wd-glass wd-history-card ${badge}">
+                <div class="wd-history-top">
+                    <div>
+                        <div class="wd-history-amount">₹${Number(w.amount || 0).toLocaleString('en-IN')}</div>
+                        <div class="wd-history-date">${w.created_at ? new Date(w.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    </div>
+                    <span class="wd-history-badge ${badge}"><span class="dot"></span>${label}</span>
+                </div>
+                <div class="wd-history-upi">To: ${escapeHtml(w.upi_to || '—')}</div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="wd-glass wd-no-data">History not readable (check Firebase rules)</div>';
+    }
+}
+
+/* ================= MPIN Modal ================= */
+function openMpinModal() {
+    const amountInput = document.getElementById('wdAmountInput');
+    const amount = parseFloat(amountInput.value);
+    const upi = document.getElementById('wdUpiInput').value.trim();
+
+    if (isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid withdrawal amount', 'error');
+        return;
+    }
+    if (amount < settings.withdraw_min || amount > settings.withdraw_max) {
+        showToast(`Amount must be between ₹${settings.withdraw_min} and ₹${settings.withdraw_max}.`, 'error');
+        return;
+    }
+    if (amount > userWallet) {
+        showToast('Insufficient wallet balance.', 'error');
+        return;
+    }
+    if (!upi || !/@/.test(upi)) {
+        showToast('Please enter a valid UPI ID (example: name@upi).', 'error');
+        return;
+    }
+
+    document.getElementById('mpinAmountDisplay').textContent = '₹' + amount.toFixed(2);
+    document.getElementById('mpinSub').textContent = savedMpin
+        ? 'Enter your 6-digit security PIN to confirm withdrawal'
+        : 'First time? Set your 6-digit MPIN. It will be asked for every withdrawal.';
+    document.getElementById('mpinOverlay').classList.remove('hidden');
+    clearMpin();
+}
+
+function closeMpinModal() {
+    document.getElementById('mpinOverlay').classList.add('hidden');
+}
+
+async function tpHashMpin(mpin) {
+    const data = new TextEncoder().encode('tp-mpin-' + String(mpin));
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ================= Submit Withdrawal ================= */
+async function submitWithdrawal() {
+    if (!tpDB) { showToast('Firebase not connected.', 'error'); return; }
+
+    const mpin = getMpinValue();
+    if (!mpin || mpin.length !== 6) {
+        showToast('Enter 6-digit MPIN', 'error');
+        return;
+    }
+
+    const amount = Number(document.getElementById('wdAmountInput').value);
+    const upi = document.getElementById('wdUpiInput').value.trim();
+    if (!amount || amount < settings.withdraw_min || amount > settings.withdraw_max) {
+        closeMpinModal();
+        showToast(`Amount must be between ₹${settings.withdraw_min} and ₹${settings.withdraw_max}.`, 'error');
+        return;
+    }
+    if (amount > userWallet) { closeMpinModal(); showToast('Insufficient wallet balance.', 'error'); return; }
+    if (!upi || !/@/.test(upi)) { closeMpinModal(); showToast('Enter a valid UPI ID.', 'error'); return; }
+
+    const verifyBtn = document.querySelector('.wd-mpin-verify');
+    const origText = verifyBtn.textContent;
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'Processing...';
+
+    try {
+        let mpinHash = '';
+        try { mpinHash = await tpHashMpin(mpin); } catch (e) { mpinHash = 'local-only'; }
+
+        if (savedMpin) {
+            if (mpinHash !== savedMpin) {
+                clearMpin();
+                showToast('Incorrect MPIN. Try again.', 'error');
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = origText;
+                return;
+            }
+        } else {
+            await tpRef('users/' + currentEmailKey).update({ mpin: mpinHash });
+            savedMpin = mpinHash;
+        }
+
+        await tpRef('withdrawals/' + currentEmailKey + '/' + tpId()).set({
+            amount: amount,
+            upi_to: upi,
+            status: 'pending',
+            created_at: tpNow()
+        });
+        await tpRef('users/' + currentEmailKey).update({ upi_id: upi });
+
+        showToast('Withdrawal request submitted! Admin will process the UPI payout.', 'success');
+        closeMpinModal();
+        document.getElementById('wdForm').reset();
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        showToast('Error submitting withdrawal. Check Firebase rules.', 'error');
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = origText;
+    }
+}
+</script>
+</body>
+</html>
