@@ -16,6 +16,37 @@ const TP_ADMIN_CONFIG = {
 
 firebase.initializeApp(TP_ADMIN_CONFIG, 'tpAdminApp');
 const tpAdminDB = firebase.database(firebase.app('tpAdminApp'));
+const tpAdminAuth = firebase.auth(firebase.app('tpAdminApp'));
+
+/** Sign in the admin app with email/password. */
+async function tpAdminSignIn(email, password) {
+    return tpAdminAuth.signInWithEmailAndPassword(email, password);
+}
+
+function tpAdminSignOut() {
+    return tpAdminAuth.signOut();
+}
+
+/** True if the given account is listed in `admins/{uid}`. */
+async function tpAdminIsAdmin(uid) {
+    if (!uid) return false;
+    try {
+        const snap = await tpAdminRef('admins/' + uid).once('value');
+        return snap.exists();
+    } catch (e) {
+        return false;
+    }
+}
+
+/** Whether the `admins` node is completely empty (first-admin setup mode). */
+async function tpAdminSetupMode() {
+    try {
+        const snap = await tpAdminRef('admins').once('value');
+        return !snap.exists();
+    } catch (e) {
+        return true;
+    }
+}
 
 /* Default platform config (overridden by RTDB `settings` node) */
 const TP_ADMIN_DEFAULTS = {
@@ -88,10 +119,16 @@ async function tpAdminHashPassword(password) {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Current admin session from localStorage */
+/** Current admin identity from Firebase Auth (may be null on first load). */
 function tpAdminGetSession() {
+    const u = tpAdminAuth.currentUser;
+    if (!u) {
+        return { username: '', uid: '', email: '', token: '' };
+    }
     return {
-        username: localStorage.getItem('tp_admin_user') || '',
-        token: localStorage.getItem('tp_admin_token') || ''
+        username: u.email || u.uid,
+        uid: u.uid,
+        email: u.email || '',
+        token: u.uid
     };
 }

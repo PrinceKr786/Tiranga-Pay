@@ -12,6 +12,7 @@
         })();
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
 </head>
@@ -429,8 +430,7 @@ function toggleTheme() {
     localStorage.setItem('tp_admin_theme', t);
 }
 function adminLogout() {
-    const s = tpAdminGetSession();
-    if (tpAdminDB && s.token) tpAdminRef('admin_sessions/' + s.token).remove().catch(() => {});
+    tpAdminSignOut().catch(() => {});
     localStorage.removeItem('tp_admin_user');
     localStorage.removeItem('tp_admin_token');
     window.location.href = 'login.html';
@@ -650,26 +650,42 @@ async function approveUser(ek) {
     const u = allUsersCache[ek];
     if (!u) return;
     await tpAdminSyncRewards();
-    const msg = `Approve ${u.email || ek}?\nRegister bonus ₹${TP_ADMIN_BONUS} will be credited. Referral bonus ₹${TP_REFERRAL_BONUS} goes to the referrer (if any).`;
+    const extra = u.pending_wallet > 0 ? `\nIncludes migrated legacy balance ₹${Number(u.pending_wallet).toLocaleString('en-IN')}.` : '';
+    const msg = `Approve ${u.email || ek}?\nRegister bonus ₹${TP_ADMIN_BONUS} will be credited. Referral bonus ₹${TP_REFERRAL_BONUS} goes to the referrer (if any).${extra}`;
     confirmBox('Approve User', msg, async () => {
         try {
             const flags = await tpAdminRef('users/' + ek + '/flags').once('value').then(s => s.val() || {});
             let bonus = 0;
             if (!flags.bonus_credited && TP_ADMIN_BONUS > 0) bonus = TP_ADMIN_BONUS;
-            const newBal = await setWallet(ek, bonus, 'Register bonus (admin approval)');
+            let newBal = await setWallet(ek, bonus, 'Register bonus (admin approval)');
             await tpAdminRef('users/' + ek).update({ status: 'approved', flags: { ...flags, bonus_credited: true } });
 
-            const referredBy = u.referred_by;
-            if (referredBy && !flags.team_added) {
+            // Migrated legacy wallet balance — credited only after admin verification
+            if (Number(u.pending_wallet || 0) > 0) {
+                const migratedBal = await setWallet(ek, Number(u.pending_wallet), 'Migrated legacy balance');
+                await tpAdminRef('users/' + ek + '/pending_wallet').remove();
+                if (migratedBal > newBal) newBal = migratedBal;
+            }
+
+            const referredBy = u.referred_by || u.referred_by_legacy;
+            if (referredBy && referredBy !== ek && allUsersCache[referredBy] && !flags.team_added) {
                 await tpAdminRef('users/' + referredBy + '/team_count').transaction(c => (c || 0) + 1);
                 await tpAdminRef('users/' + ek + '/flags/team_added').set(true);
+                await tpAdminRef('teams/' + referredBy + '/' + ek).set({
+                    full_name: u.full_name || '',
+                    email: u.email || '',
+                    status: 'approved',
+                    recharge: 0,
+                    today_recharge: 0,
+                    joined: (u.created_at || tpAdminNow()) * 1000
+                }).catch(() => {});
                 if (TP_REFERRAL_BONUS > 0) {
                     await setWallet(referredBy, TP_REFERRAL_BONUS, 'Referral bonus (member approved)');
                 }
             }
             toast('User approved. Balance ₹' + newBal.toLocaleString('en-IN'), true);
             await Promise.all([loadUsers(), loadDashboard()]);
-        } catch (e) { toast('Error approving user.', false); }
+        } catch (e) { console.error(e); toast('Error approving user.', false); }
     }, 'Approve', false);
 }
 
@@ -689,13 +705,16 @@ function deleteUser(ek) {
     const u = allUsersCache[ek];
     confirmBox('Delete User', 'Permanently delete ' + (u ? u.email : ek) + ' with deposits, withdrawals, and history? This cannot be undone.', async () => {
         try {
-            await Promise.all([
+            const jobs = [
                 tpAdminRef('users/' + ek).remove(),
                 tpAdminRef('deposits/' + ek).remove(),
                 tpAdminRef('withdrawals/' + ek).remove(),
-                tpAdminRef('wallet_ledger/' + ek).remove()
-            ]);
-            toast('User deleted.', true);
+                tpAdminRef('wallet_ledger/' + ek).remove(),
+                tpAdminRef('teams/' + ek).remove()
+            ];
+            if (u && u.referral_code) jobs.push(tpAdminRef('refcodes/' + u.referral_code).remove().catch(() => {}));
+            await Promise.all(jobs);
+            toast('User deleted. Note: their Firebase Auth sign-in remains disabled because the profile is removed.', true);
             await Promise.all([loadUsers(), loadDashboard()]);
             closeModal('userOverlay');
         } catch (e) { toast('Error deleting user.', false); }
@@ -729,32 +748,33 @@ async function applyWallet(ek, amount, reason) {
 /* ---- Add user ---- */
 function addUser() {
     promptBox('Add New User', 'Email address:', '', (email) => {
-        const ek = tpAdminKey(email);
         promptBox('Add New User', 'Full name:', '', (name) => {
-            promptBox('Add New User', 'Temporary password:', '', (pwd) => {
-                createUser(ek, email, name, pwd);
-            }, v => (v.length >= 4 ? null : 'Password must be at least 4 characters.'));
+            promptBox('Add New User', 'Temporary password (6+ chars):', '', (pwd) => {
+                createUser(email, name, pwd);
+            }, v => (v.length >= 6 ? null : 'Password must be at least 6 characters.'));
         }, v => (v ? null : 'Name is required.'));
     }, v => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email address.';
         return null;
     }, 'user@email.com');
 }
-async function createUser(ek, email, name, pwd) {
+async function createUser(email, name, pwd) {
     try {
-        const dup = await tpAdminRef('users/' + ek).once('value');
-        if (dup.exists()) { toast('User already exists.', false); return; }
-        let hash = '';
-        try { hash = await tpUserHash(pwd); } catch (e) { hash = ''; }
+        const cred = await tpAdminAuth.createUserWithEmailAndPassword(email, pwd);
+        const uid = cred.user.uid;
         const code = tpRefCode();
-        await tpAdminRef('users/' + ek).set({
-            email: email.toLowerCase(), full_name: name, password: hash, referral_code: code,
+        await tpAdminRef('users/' + uid).set({
+            email: email.toLowerCase(), full_name: name, referral_code: code,
             wallet: 0, team_count: 0, status: 'pending', created_at: tpAdminNow(),
             flags: { bonus_credited: false, team_added: false }
         });
+        await tpAdminRef('refcodes/' + code).set(uid).catch(() => {});
         toast('User created (pending). Ref code: ' + code, true);
         loadUsers();
-    } catch (e) { toast('Error creating user.', false); }
+    } catch (e) {
+        if (e && e.code === 'auth/email-already-in-use') toast('An account with this email already exists.', false);
+        else toast('Error creating user.', false);
+    }
 }
 function tpAdminKey(email) { return String(email).toLowerCase().replace(/[.#$\/\[\]]/g, '_'); }
 async function tpUserHash(password) {
@@ -933,13 +953,28 @@ async function approveDeposit(ek, id) {
             await tpAdminRef('deposits/' + ek + '/' + id).update({ status: 'approved', approved_at: tpAdminNow() });
             const uSnap = await tpAdminRef('users/' + ek).once('value');
             const u = uSnap.val();
-            if (u && u.referred_by && TP_REFERRAL_COMMISSION > 0) {
+
+            // Update referrer's team snapshot recharge stats
+            if (u && u.referred_by && allUsersCache[u.referred_by]) {
+                const refUid = u.referred_by;
+                await tpAdminRef('teams/' + refUid + '/' + ek + '/recharge').transaction(c => (c || 0) + Number(d.amount || 0));
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const memberTodaySnap = await tpAdminRef('teams/' + refUid + '/' + ek + '/today_date').once('value').catch(() => ({ val: () => '' }));
+                if (memberTodaySnap.val() === todayStr) {
+                    await tpAdminRef('teams/' + refUid + '/' + ek + '/today_recharge').transaction(c => (c || 0) + Number(d.amount || 0));
+                } else {
+                    await tpAdminRef('teams/' + refUid + '/' + ek).update({ today_date: todayStr, today_recharge: Number(d.amount || 0) });
+                }
+            }
+
+            // Referrer commission
+            if (u && u.referred_by && allUsersCache[u.referred_by] && TP_REFERRAL_COMMISSION > 0) {
                 const cc = Math.round(Number(d.amount) * TP_REFERRAL_COMMISSION * 100) / 100;
                 if (cc > 0) await setWallet(u.referred_by, cc, 'Referral commission ' + Math.round(TP_REFERRAL_COMMISSION * 100) + '%');
             }
             toast('Deposit approved. Balance ₹' + newBal.toLocaleString('en-IN'), true);
             await Promise.all([loadDeposits(), loadDashboard()]);
-        } catch (e) { toast('Error approving deposit.', false); }
+        } catch (e) { console.error(e); toast('Error approving deposit.', false); }
     }, 'Approve', true);
 }
 function rejectDeposit(ek, id) {
@@ -1095,7 +1130,8 @@ async function sendBroadcast() {
 }
 
 /* ================= ADMINS ================= */
-let selfUsername = '';
+let selfUsername = '';   // current admin Firebase UID
+let selfEmail = '';
 async function loadAdmins() {
     try {
         const snap = await tpAdminRef('admins').once('value');
@@ -1107,27 +1143,40 @@ async function loadAdmins() {
             const a = raw[k];
             const isSelf = k === selfUsername;
             return `<tr>
-                <td style="font-weight:800;">${esc(a.name || k)} ${isSelf ? '<span class="badge orange">you</span>' : ''}</td>
-                <td class="mono" style="font-size:12px;">${esc(k)}</td>
+                <td style="font-weight:800;">${esc(a.name || a.email || k)} ${isSelf ? '<span class="badge orange">you</span>' : ''}</td>
+                <td class="mono" style="font-size:12px;">${esc(a.email || k)}</td>
                 <td>${fmtDate(a.created_at)}</td>
-                <td>${isSelf ? '<span style="color:var(--muted);font-size:12px;">—</span>' : `<button class="btn btn-sm btn-outline-red" onclick="removeAdmin('${esc(k)}','${esc(a.name || k)}')">Remove</button>`}</td>
+                <td>${isSelf ? '<span style="color:var(--muted);font-size:12px;">—</span>' : `<button class="btn btn-sm btn-outline-red" onclick="removeAdmin('${esc(k)}','${esc(a.email || a.name || k)}')">Remove</button>`}</td>
             </tr>`;
         }).join('');
     } catch (e) {}
 }
 function addAdmin() {
-    promptBox('Add Admin', 'Username (letters/numbers):', '', (uname) => {
-        const sanitized = uname.replace(/[.\/#$[\]]/g, '_');
-        promptBox('Add Admin', 'Password:', '', async (pwd) => {
-            try {
-                const hash = await tpAdminHashPassword(pwd);
-                await tpAdminRef('admins/' + sanitized).set({ name: uname, password: hash, created_at: tpAdminNow() });
-                toast('Admin added.', true);
-                loadAdmins();
-            } catch (e) { toast('Error adding admin.', false); }
-        }, v => (v.length >= 4 ? null : 'Password must be at least 4 characters.'));
+    promptBox('Add Admin', 'Email of an existing registered user (they log in with their own password):', '', async (email) => {
+        const uQuery = email.trim().toLowerCase();
+        if (!uQuery) return;
+        try {
+            const usersSnap = await tpAdminRef('users').once('value');
+            const userMap = usersSnap.val() || {};
+            let foundUid = '';
+            let foundName = '';
+            Object.keys(userMap).forEach(k => {
+                if ((userMap[k].email || '').toLowerCase() === uQuery) {
+                    foundUid = k;
+                    foundName = userMap[k].full_name || userMap[k].email;
+                }
+            });
+            if (!foundUid) { toast('No user account with this email.', false); return; }
+            await tpAdminRef('admins/' + foundUid).set({
+                name: foundName,
+                email: uQuery,
+                created_at: tpAdminNow()
+            });
+            toast('Admin added.', true);
+            loadAdmins();
+        } catch (e) { toast('Error adding admin.', false); }
     }, v => {
-        if (!/^[a-zA-Z0-9_.-]{3,}$/.test(v)) return 'Use 3+ letters/numbers.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email.';
         return null;
     });
 }
@@ -1141,39 +1190,48 @@ function removeAdmin(key, name) {
 async function changePassword() {
     const newPwd = document.getElementById('pwdNew').value.trim();
     if (!newPwd) { toast('Enter a new password.', false); return; }
-    if (newPwd.length < 4) { toast('Password too short (4+).', false); return; }
+    if (newPwd.length < 6) { toast('Password too short (6+).', false); return; }
     try {
-        const hash = await tpAdminHashPassword(newPwd);
-        await tpAdminRef('admins/' + selfUsername + '/password').set(hash);
+        const user = tpAdminAuth.currentUser;
+        if (!user) { toast('Session expired. Please login again.', false); return; }
+        await user.updatePassword(newPwd);
         document.getElementById('pwdNew').value = '';
         toast('Password updated.', true);
-    } catch (e) { toast('Error updating password.', false); }
+    } catch (e) {
+        if (e && e.code === 'auth/requires-recent-login') toast('Please logout and login again before changing password.', false);
+        else toast('Error updating password.', false);
+    }
 }
 
 /* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', async () => {
     applyIcons();
-    if (!tpAdminDB) return;
-    const s = tpAdminGetSession();
-    if (!s.username || !s.token) { window.location.href = 'login.html'; return; }
-    selfUsername = s.username;
-    document.getElementById('whoName').textContent = s.username;
-    document.getElementById('whoAvatar').textContent = String(s.username).charAt(0).toUpperCase();
-    document.getElementById('pwdUsername').value = s.username;
+    if (!tpAdminDB || !tpAdminAuth) return;
 
-    try {
-        await tpAdminLoadSettings();
-        await tpAdminSyncRewards();
-    } catch (e) {}
-    loadMetadata();
-    loadDashboard();
-    loadUsers();
-    loadDeposits();
-    loadWithdrawals();
+    tpAdminAuth.onAuthStateChanged(async (user) => {
+        if (!user) { window.location.href = 'login.html'; return; }
+        const isAdmin = await tpAdminIsAdmin(user.uid);
+        if (!isAdmin) { window.location.href = 'login.html'; return; }
+        selfUsername = user.uid;
+        selfEmail = user.email || '';
+        document.getElementById('whoName').textContent = user.email || user.uid;
+        document.getElementById('whoAvatar').textContent = String(user.email || 'A').charAt(0).toUpperCase();
+        document.getElementById('pwdUsername').value = user.email || '';
 
-    document.getElementById('userSearch').addEventListener('input', () => renderUsers());
-    document.getElementById('depSearch').addEventListener('input', () => renderDeposits());
-    document.getElementById('wdSearch').addEventListener('input', () => renderWithdrawals());
+        try {
+            await tpAdminLoadSettings();
+            await tpAdminSyncRewards();
+        } catch (e) {}
+        loadMetadata();
+        loadDashboard();
+        loadUsers();
+        loadDeposits();
+        loadWithdrawals();
+
+        document.getElementById('userSearch').addEventListener('input', () => renderUsers());
+        document.getElementById('depSearch').addEventListener('input', () => renderDeposits());
+        document.getElementById('wdSearch').addEventListener('input', () => renderWithdrawals());
+    });
 });
 </script>
 

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Create Account - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet">
@@ -287,6 +288,7 @@
 
     <!-- Firebase SDK (user side config) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -400,74 +402,85 @@ function togglePasswordVisibility(fieldId) {
     }
 }
 
-/* ============ Register (Email + Password, pending admin approval) ============ */
+/* ============ Register (Email + Password via Firebase Auth, pending admin approval) ============ */
 async function handleRegister() {
     const form = document.getElementById('registerForm');
     const fullName = (form.querySelector('input[name="full_name"]').value || '').trim();
     const email = document.getElementById('regEmail').value.trim();
     const pwd = document.getElementById('regPassword').value;
-    const refInput = (form.querySelector('input[name="referral_code"]').value || '').trim();
+    const refInput = (form.querySelector('input[name="referral_code"]').value || '').trim().toUpperCase();
     document.getElementById('regPasswordConfirm').value = pwd;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!fullName || fullName.length < 2) { showToast('Please enter your full name.', 'error'); return; }
     if (!emailRegex.test(email)) { showToast('Please enter a valid email address (e.g. user@gmail.com).', 'error'); return; }
     if (pwd.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
-    if (!tpDB) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
+    if (!tpDB || !tpAuth) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
 
     const btn = document.getElementById('registerBtn');
     const origText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'SUBMITTING...';
 
+    let referredBy = '';
+    let ownCode = tpRefCode();
+
     try {
-        const emailKey = tpEmailKey(email);
-        const hash = await tpHashPassword(pwd);
-        const referralCode = refInput ? refInput.toUpperCase() : TP_REFERRAL_DEFAULT;
-        let referredBy = '';
-
-        // Duplicate check (by email key)
-        const existing = await tpRef('users/' + emailKey).once('value');
-        if (existing.val()) {
-            showToast('This email is already registered. Please login.', 'error');
-            return;
-        }
-
-        // Resolve invite code (only against approved referrers)
+        // Resolve invite code against public referral index (Firebase Auth not needed yet)
         if (refInput) {
-            const allUsers = await tpRef('users').once('value');
-            allUsers.forEach(child => {
-                const u = child.val();
-                if (u.status === 'approved' && u.referral_code && u.referral_code.toUpperCase() === referralCode) {
-                    referredBy = child.key;
-                    return true;
-                }
-                return false;
-            });
-            if (!referredBy) {
+            const refSnap = await tpRef('refcodes/' + refInput).once('value');
+            const refUid = refSnap.val();
+            if (refUid && typeof refUid === 'string') {
+                referredBy = refUid;
+            } else {
                 showToast('Invalid invite code. Try again or leave it empty.', 'error');
                 return;
             }
         }
 
-        // Create user in PENDING state - wallet credited only after admin approval
-        await tpRef('users/' + emailKey).set({
-            email: email,
+        // Create the real account in Firebase Authentication
+        const cred = await tpAuth.createUserWithEmailAndPassword(email, pwd);
+        const uid = cred.user.uid;
+
+        // Create the user profile keyed by Firebase UID (pending admin approval).
+        // Rules restrict status/wallet writes so the client can only create a
+        // 'pending' profile with a 0 wallet.
+        await tpRef('users/' + uid).set({
+            email: email.toLowerCase(),
             full_name: fullName,
-            password: hash,
-            referral_code: referralCode,
+            referral_code: ownCode,
             referred_by: referredBy || '',
             wallet: 0,
             team_count: 0,
             status: 'pending',
-            bonus_credited: false,
             created_at: tpNow()
         });
 
+        // Publish the user's own referral code (write-once per the rules)
+        await tpRef('refcodes/' + ownCode).set(uid);
+
+        // Register the member in the referrer's team snapshot (write-once per rules)
+        if (referredBy) {
+            await tpRef('teams/' + referredBy + '/' + uid).set({
+                full_name: fullName,
+                email: email.toLowerCase(),
+                status: 'pending',
+                recharge: 0,
+                joined: tpNow()
+            });
+        }
+
+        await tpAuth.signOut();
         showToast('Registration submitted. Admin approval required before login.', 'success');
         setTimeout(() => { window.location.href = 'login.html'; }, 2500);
     } catch (e) {
-        showToast('Error during registration. Check Firebase rules/permissions.', 'error');
+        if (e && e.code === 'auth/email-already-in-use') {
+            showToast('This email is already registered. Please login.', 'error');
+        } else if (e && (e.code === 'auth/invalid-email' || e.code === 'auth/weak-password')) {
+            showToast(e.message || 'Invalid email or weak password.', 'error');
+        } else {
+            showToast('Error during registration. Check Firebase rules/permissions.', 'error');
+        }
     } finally {
         btn.disabled = false;
         btn.textContent = origText;

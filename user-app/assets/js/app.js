@@ -11,6 +11,44 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * PWA Install - Add TirangaPay to Home Screen (works on phone + PC)
+ */
+let tpDeferredInstall = null;
+
+window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    tpDeferredInstall = e;
+});
+
+window.addEventListener('appinstalled', function () {
+    tpDeferredInstall = null;
+    showToast('Tiranga Pay installed successfully!', 'success');
+});
+
+function tpInstallApp() {
+    if (tpDeferredInstall) {
+        tpDeferredInstall.prompt();
+        tpDeferredInstall.userChoice.finally(() => { tpDeferredInstall = null; });
+        return;
+    }
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+        showToast('Tap the Share icon, then choose "Add to Home Screen".', 'info');
+        return;
+    }
+    showToast('Use the Install icon in the browser address bar, or Share > "Add to Home Screen".', 'info');
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (err) {
+            navigator.serviceWorker.register('../sw.js').catch(function (e2) {
+                console.warn('SW registration failed:', e2);
+            });
+        });
+    });
+}
+
+/**
  * Toast Notification System
  */
 function showToast(message, type = 'info') {

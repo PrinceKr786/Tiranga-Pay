@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Profile - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -92,15 +94,15 @@
                 <span style="font-size: 11px; font-weight: 800; background: #FF6600; color: #fff; padding: 4px 10px; border-radius: 6px;">Hot &rsaquo;</span>
             </a>
 
-            <a href="javascript:void(0)" onclick="showToast('App download coming soon!', 'info')" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
+            <a href="javascript:void(0)" onclick="tpInstallApp()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 14px;">
                     <div style="width: 36px; height: 36px; border-radius: 12px; background: #FFF0E6; color: #FF6600; display: flex; align-items: center; justify-content: center; font-size: 18px;"><span data-ic="phone"></span></div>
                     <div>
-                        <span style="font-size: 15px; font-weight: 800; color: #1E293B;">Download TirangaPay App</span>
-                        <div style="font-size: 11px; font-weight: 700; color: #FF6600;">Get Official Android APK App</div>
+                        <span style="font-size: 15px; font-weight: 800; color: #1E293B;">Install TirangaPay App</span>
+                        <div style="font-size: 11px; font-weight: 700; color: #FF6600;">Add app shortcut to home screen</div>
                     </div>
                 </div>
-                <span style="font-size: 11px; font-weight: 800; background: #FFF0E6; color: #FF6600; padding: 4px 8px; border-radius: 6px;">APK &rsaquo;</span>
+                <span style="font-size: 11px; font-weight: 800; background: #FFF0E6; color: #FF6600; padding: 4px 8px; border-radius: 6px;">Install &rsaquo;</span>
             </a>
 
             <a href="javascript:void(0)" onclick="editUpi()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F1F5F9; text-decoration: none; cursor: pointer;">
@@ -176,9 +178,9 @@ let myReferralCode = '';
 let myReferralLink = '';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const session = tpGetSession();
-    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
-    currentEmailKey = tpEmailKey(session.email);
+    const session = await tpGetSessionAsync();
+    if (!session.uid) { window.location.href = 'login.html'; return; }
+    currentEmailKey = session.uid;
 
     const snap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
     const u = snap && snap.val();
@@ -196,12 +198,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (myReferralCode) document.querySelector('[data-profile-code]').style.cursor = 'pointer';
     document.querySelector('[data-profile-code]').onclick = () => { if (myReferralCode) copyText(myReferralCode); };
 });
-
-async function tpHashMpin(mpin) {
-    const data = new TextEncoder().encode('tp-mpin-' + String(mpin));
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 function copyReferral(type) {
     copyText(type === 'code' ? myReferralCode : myReferralLink);
@@ -228,15 +224,13 @@ async function setMpin() {
     if (pin2 === null) return;
     if (String(pin1).trim() !== String(pin2).trim()) { showToast('MPIN does not match', 'error'); return; }
     try {
-        const hash = await tpHashMpin(String(pin1).trim());
+        const hash = await tpHashMpin(String(pin1).trim(), currentEmailKey);
         await tpRef('users/' + currentEmailKey).update({ mpin: hash });
         showToast('MPIN updated successfully!', 'success');
     } catch (e) { showToast('Failed to update MPIN', 'error'); }
 }
 
 function logoutUser() {
-    const s = tpGetSession();
-    if (s.token) tpRef('sessions/' + s.token).remove().catch(() => {});
     tpClearSession();
     window.location.href = 'login.html';
 }

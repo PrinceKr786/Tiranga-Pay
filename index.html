@@ -35,7 +35,10 @@
 
   <!-- Favicon & Touch Icons -->
   <link rel="icon" type="image/png" href="assets/images/tiranga-pay-logo.png">
-  <link rel="apple-touch-icon" href="assets/images/tiranga-pay-logo.png">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <!-- PWA / Installable App -->
+  <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -398,7 +401,7 @@
             <p>Experience simple navigation, transparent rewards, and dedicated multi-channel assistance.</p>
             <div class="comp-cta-actions">
               <a href="user-app/register.html?ref=GET20" class="btn-comp-primary">Create Your Account</a>
-              <a href="apk/TirangaPay-v1.0.0.apk" class="btn-comp-secondary" download="TirangaPay-v1.0.0.apk">Download APK</a>
+              <a href="javascript:void(0)" class="btn-comp-secondary" id="btnInstallApp">Install App</a>
             </div>
           </div>
         </div>
@@ -464,14 +467,14 @@
         </div>
       </div>
 
-      <!-- APK Download Section -->
+      <!-- Install App Section -->
       <div class="section-box" style="padding: 0; border: none; background: transparent;">
         <div class="apk-card-clean">
-          <h2>Download Tiranga Pay APK</h2>
-          <p>Official Android App &bull; Version 1.0.0 &bull; 1.05 MB</p>
-          <a href="apk/TirangaPay-v1.0.0.apk" class="btn-apk-download" download="TirangaPay-v1.0.0.apk">
+          <h2>Install Tiranga Pay App</h2>
+          <p>Add Tiranga Pay as an app shortcut on your phone or PC &bull; Works on Android, iOS, Windows &amp; Mac</p>
+          <a href="javascript:void(0)" class="btn-apk-download" id="btnInstallAppBig">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>DOWNLOAD APK (1.05 MB)</span>
+            <span>INSTALL APP</span>
           </a>
         </div>
       </div>
@@ -502,11 +505,11 @@
 
           <div class="faq-card">
             <div class="faq-card-header">
-              <span>How do I download the Android APK?</span>
+              <span>How do I install the Tiranga Pay app?</span>
               <span>▾</span>
             </div>
             <div class="faq-card-body">
-              Tap the "Download APK" button above to get the official 1.05 MB package directly onto your Android device.
+              Tap the "INSTALL APP" button above. On Android/Chrome it adds an app icon to your home screen; on PC (Chrome/Edge) it installs like a normal app. No APK download needed.
             </div>
           </div>
         </div>
@@ -552,6 +555,61 @@
 
   <!-- JavaScript -->
   <script src="assets/js/main.js"></script>
+
+  <script>
+    // ===== PWA Install (Add to Home Screen / Install shortcut) =====
+    var deferredPrompt = null;
+    var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    function triggerInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function (choice) {
+          if (choice.outcome === 'accepted') {
+            showToastNotice('Tiranga Pay installed! Open it from your home screen.');
+          }
+          deferredPrompt = null;
+        });
+        return;
+      }
+      if (isIos) {
+        showToastNotice('Tap the Share icon ▢ then choose "Add to Home Screen".');
+        return;
+      }
+      showToastNotice('Use the Install icon in the browser address bar, or share → "Add to Home Screen".');
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    window.addEventListener('appinstalled', function () {
+      deferredPrompt = null;
+      showToastNotice('Tiranga Pay installed successfully!');
+    });
+
+    document.getElementById('btnInstallApp').addEventListener('click', triggerInstall);
+    document.getElementById('btnInstallAppBig').addEventListener('click', triggerInstall);
+
+    // ===== Service Worker registration =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function (err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+
+    function showToastNotice(msg) {
+      var el = document.getElementById('toastNotice');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(function () { el.classList.remove('show'); }, 4000);
+    }
+  </script>
 </body>
 
 </html>

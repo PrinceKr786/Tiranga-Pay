@@ -12,6 +12,7 @@
         })();
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
     <style>
@@ -67,14 +68,14 @@
 
         <div class="setup-chip" id="setupChip">Setup Mode — First Admin</div>
         <div class="login-hint" id="setupModeBanner">
-            No admin account exists yet. The first username + password entered here will create the admin account.
+            No admin exists yet. Sign in with any account already registered on the user app (Register page); the first one becomes the admin.
         </div>
         <div class="login-err" id="loginError"></div>
 
         <form id="adminLoginForm" onsubmit="return handleAdminLogin(event)">
             <div class="field">
-                <label>Username</label>
-                <input type="text" id="adminUsername" placeholder="admin" autocomplete="username">
+                <label>Email</label>
+                <input type="email" id="adminUsername" placeholder="admin@example.com" autocomplete="username">
             </div>
             <div class="field" style="margin-bottom: 22px;">
                 <label>Password</label>
@@ -110,43 +111,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function handleAdminLogin(e) {
     e.preventDefault();
-    const username = document.getElementById('adminUsername').value.trim();
+    const email = document.getElementById('adminUsername').value.trim();
     const password = document.getElementById('adminPassword').value;
     const btn = document.getElementById('adminLoginBtn');
 
-    if (!username || !password) { showAdminError('Please enter username and password.'); return; }
-    if (!tpAdminDB) { showAdminError('Firebase not connected. Check admin firebase-config.js'); return; }
+    if (!email || !password) { showAdminError('Please enter email and password.'); return; }
+    if (!tpAdminDB || !tpAdminAuth) { showAdminError('Firebase not connected. Check admin firebase-config.js'); return; }
 
     btn.disabled = true;
     btn.textContent = 'VERIFYING...';
 
     try {
-        const sanitized = username.replace(/[.\/#$[\]]/g, '_');
-        const hash = await tpAdminHashPassword(password);
-        const token = tpAdminId();
+        const cred = await tpAdminSignIn(email, password);
+        const uid = cred.user.uid;
 
         const adminsSnap = await tpAdminRef('admins').once('value');
 
         if (!adminsSnap.exists()) {
-            await tpAdminRef('admins/' + sanitized).set({
-                name: username,
-                password: hash,
+            // FIRST admin bootstrap: anyone will accept trust by making you admin
+            await tpAdminRef('admins/' + uid).set({
+                name: email,
+                email: email.toLowerCase(),
                 created_at: tpAdminNow()
             });
         } else {
-            const admin = adminsSnap.child(sanitized).val();
-            if (!admin || !admin.password || admin.password !== hash) {
-                showAdminError('Invalid username or password.');
+            const admin = adminsSnap.child(uid).val();
+            if (!admin) {
+                await tpAdminSignOut();
+                showAdminError('This account is not an admin.');
                 return;
             }
         }
 
-        await tpAdminRef('admin_sessions/' + token).set({ username: sanitized, created_at: tpAdminNow() });
-        localStorage.setItem('tp_admin_user', sanitized);
-        localStorage.setItem('tp_admin_token', token);
+        localStorage.setItem('tp_admin_user', email);
         window.location.href = 'index.html';
     } catch (err) {
-        showAdminError('Login failed. Check Firebase rules/permissions.');
+        if (err && err.code === 'auth/user-not-found') {
+            showAdminError('No account with this email. Register it first on the user app, then sign in here.');
+        } else if (err && (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential')) {
+            showAdminError('Incorrect email or password.');
+        } else {
+            showAdminError('Login failed. Check network / Firebase rules.');
+        }
     } finally {
         btn.disabled = false;
         btn.textContent = 'Login to Admin Panel';

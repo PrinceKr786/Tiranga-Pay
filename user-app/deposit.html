@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deposit - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Firebase SDK (user side config) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -980,9 +982,9 @@ dcMpinInputs.forEach((input, index) => {
 
 /* ================= Firebase wiring ================= */
 document.addEventListener('DOMContentLoaded', async () => {
-    const session = tpGetSession();
-    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
-    currentEmailKey = tpEmailKey(session.email);
+    const session = await tpGetSessionAsync();
+    if (!session.uid) { window.location.href = 'login.html'; return; }
+    currentEmailKey = session.uid;
 
     const [userSnap, setSnap] = await Promise.all([
         tpRef('users/' + currentEmailKey).once('value').catch(() => null),
@@ -1233,12 +1235,6 @@ function copyDepPayTo() {
     copyText(document.getElementById('dcPayTo').textContent.replace(/^[^:]*:\s*/, ''));
 }
 
-async function tpHashMpin(mpin) {
-    const data = new TextEncoder().encode('tp-mpin-' + String(mpin));
-    const buf = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function submitDepositRequest() {
     if (!tpDB) { showToast('Firebase not connected.', 'error'); return; }
     if (!depositCtx) { showToast('Nothing to submit.', 'error'); return; }
@@ -1252,7 +1248,7 @@ async function submitDepositRequest() {
 
     try {
         let mpinHash = '';
-        try { mpinHash = await tpHashMpin(mpin); } catch (e) { mpinHash = 'local-only'; }
+        try { mpinHash = await tpHashMpin(mpin, currentEmailKey); } catch (e) { mpinHash = 'local-only'; }
 
         if (savedMpin) {
             if (mpinHash !== savedMpin) {

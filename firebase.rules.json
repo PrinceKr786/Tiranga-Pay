@@ -1,0 +1,106 @@
+{
+  "rules": {
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+        ".write": "auth != null && ((auth.uid === $uid && !root.child('admins').exists()) || root.child('admins').child(auth.uid).exists())"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || data.child('email').val() === auth.token.email)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || (newData.val() === null && data.child('email').val() === auth.token.email))",
+        "status": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || newData.val() === 'pending')"
+        },
+        "wallet": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || newData.val() === 0)"
+        },
+        "flags": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+        },
+        "password": {
+          ".write": false
+        },
+        "email": {
+          ".write": false
+        },
+        "$other": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())"
+        }
+      }
+    },
+    "teams": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "$member": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || ($member === auth.uid && !data.exists()))"
+        }
+      }
+    },
+    "refcodes": {
+      "$code": {
+        ".read": true,
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (!data.exists() && newData.val() === auth.uid))"
+      }
+    },
+    "deposits": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "$record": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.uid === $uid && (data.exists() === false || data.child('status').val() === 'pending') && newData.child('status').val() === 'pending'))"
+        }
+      }
+    },
+    "withdrawals": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "$record": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.uid === $uid && (data.exists() === false || data.child('status').val() === 'pending') && newData.child('status').val() === 'pending'))"
+        }
+      }
+    },
+    "wallet_ledger": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+      }
+    },
+    "chat_index": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "$token": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())"
+        }
+      }
+    },
+    "chats": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      ".write": false,
+      "$token": {
+        ".read": "auth != null && (data.child('email').val() === auth.token.email || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (newData.child('email').val() === auth.token.email || root.child('admins').child(auth.uid).exists())",
+        "messages": {
+          ".read": "auth != null && (root.child('chats').child($token).child('email').val() === auth.token.email || root.child('admins').child(auth.uid).exists())",
+          ".write": "auth != null && (root.child('chats').child($token).child('email').val() === auth.token.email || root.child('admins').child(auth.uid).exists())"
+        }
+      }
+    },
+    "settings": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+    "broadcast": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+    },
+    "sessions": {
+      ".read": false,
+      ".write": false
+    },
+    "admin_sessions": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

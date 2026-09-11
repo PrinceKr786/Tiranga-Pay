@@ -1,0 +1,27 @@
+{
+  "name": "Tiranga Pay",
+  "short_name": "TirangaPay",
+  "description": "Tiranga Pay – Indian digital rewards and referral platform. Earn, refer, and withdraw to your bank.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF7F0",
+  "theme_color": "#FF6A00",
+  "categories": ["finance", "business"],
+  "icons": [
+    {
+      "src": "assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,18 +1,72 @@
 /**
- * Tiranga Pay - Guest Live Chat Frontend Engine (Firebase Realtime DB)
- * Requires: firebase-config.js loaded first
+ * Tiranga Pay - Live Chat Frontend Engine (Firebase Realtime DB, secure)
+ * Chat is tied to the signed-in Firebase user. The admin view is authorized by
+ * real `admins/{uid}` membership (the ?admin=1 flag is only a UI hint).
+ * Requires: firebase-config.js loaded first + firebase-auth-compat.js
  */
 
 let guestChatPollTimer = null;
 let lastMsgId = 0;
 let currentSessionToken = '';
 let isSendingMsg = false;
-let currentSenderType = (new URLSearchParams(window.location.search).get('admin') === '1') ? 'admin' : 'guest';
+let guestSelectedImgFile = null;
+let chatIsAdminParam = new URLSearchParams(window.location.search).get('admin') === '1';
+let chatAuth = null;      // auth instance for the chat DB (user app or admin app)
+let chatDB = null;        // database instance used by this chat page
+let chatUser = null;      // signed-in Firebase user object (or null)
+let chatIsAdmin = false;  // real admin membership (not the URL param)
+let chatAdminName = '';
 
-document.addEventListener('DOMContentLoaded', () => {
+let tpChatBootPromise = null;
+function tpChatBoot() {
+    if (tpChatBootPromise) return tpChatBootPromise;
+    tpChatBootPromise = (async () => {
+        if (chatIsAdminParam) {
+            // Admin app: chat data is shared in the same DB; use the admin session
+            if (!firebase.apps.some(a => a.name === 'tpAdminApp')) {
+                firebase.initializeApp(TP_FIREBASE_CONFIG, 'tpAdminApp');
+            }
+            chatAuth = firebase.auth(firebase.app('tpAdminApp'));
+            chatDB = firebase.database(firebase.app('tpAdminApp'));
+        } else {
+            chatAuth = tpAuth;
+            chatDB = tpDB;
+        }
+        if (!chatAuth) return;
+
+        await new Promise(resolve => {
+            chatAuth.onAuthStateChanged(u => { chatUser = u; resolve(); });
+        });
+
+        if (chatUser && chatIsAdminParam) {
+            const snap = await chatDB.ref('admins/' + chatUser.uid).once('value').catch(() => null);
+            chatIsAdmin = !!(snap && snap.exists());
+            chatAdminName = snap && snap.val() ? (snap.val().name || snap.val().email || 'Support Agent') : 'Support Agent';
+        }
+    })();
+    return tpChatBootPromise;
+}
+
+function chatRef(path) {
+    return chatDB.ref(path);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     initTopicPills();
+    await tpChatBoot();
+
+    // Chat now requires a signed-in account (rules enforce ownership).
+    if (!chatUser) {
+        showToast('Please login to use support chat.', 'info');
+        window.location.href = '../login.html';
+        return;
+    }
+
     initGuestChatForm();
     initActiveChatSession();
+    if (document.getElementById('guestSessionsListContainer')) {
+        loadGuestSessionsList();
+    }
 });
 
 /**
@@ -41,18 +95,28 @@ function initGuestChatForm() {
     const form = document.getElementById('guestStartChatForm');
     if (!form) return;
 
+    // Lock the identity to the signed-in account
+    const emailInput = document.getElementById('chat_email');
+    const nameInput = document.getElementById('chat_name');
+    if (emailInput && chatUser) {
+        emailInput.value = chatUser.email || '';
+        emailInput.setAttribute('readonly', 'readonly');
+    }
+    if (nameInput && chatUser && !nameInput.value) {
+        nameInput.value = localStorage.getItem('tp_user_name') || (chatUser.email ? chatUser.email.split('@')[0] : '');
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        if (!tpDB) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
+        if (!chatDB) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
+        if (!chatUser) { showToast('Please login first.', 'error'); return; }
 
-        const nameInput = document.getElementById('chat_name');
-        const emailInput = document.getElementById('chat_email');
+        const name = ((nameInput && nameInput.value) || localStorage.getItem('tp_user_name') || '').trim();
+        const email = (chatUser.email || '').trim();
         const subjectInput = document.getElementById('chat_subject');
         const msgInput = document.getElementById('chat_message');
 
-        const name = nameInput ? nameInput.value.trim() : '';
-        const email = emailInput ? emailInput.value.trim() : '';
         const subject = subjectInput ? subjectInput.value.trim() : '';
         const message = msgInput ? msgInput.value.trim() : '';
 
@@ -62,20 +126,15 @@ function initGuestChatForm() {
             if (nameInput) nameInput.focus();
             return;
         }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || !emailRegex.test(email)) {
-            showToast('Please enter a valid email address.', 'error');
-            if (emailInput) emailInput.focus();
+        if (!email) {
+            showToast('Your account email is missing.', 'error');
             return;
         }
-
         if (!subject || subject.length < 3) {
             showToast('Please enter a valid subject.', 'error');
             if (subjectInput) subjectInput.focus();
             return;
         }
-
         if (!message || message.length < 3) {
             showToast('Please describe your issue in the message field.', 'error');
             if (msgInput) msgInput.focus();
@@ -93,7 +152,7 @@ function initGuestChatForm() {
             const token = tpId();
             const now = tpNow();
 
-            await tpRef('chats/' + token).set({
+            await chatRef('chats/' + token).set({
                 name: name,
                 email: email,
                 subject: subject,
@@ -103,7 +162,10 @@ function initGuestChatForm() {
                 last_message_time: tpFormatTime(now)
             });
 
-            await tpRef('chats/' + token + '/messages').push({
+            // Personal index so the owner can list their own sessions securely
+            await chatRef('chat_index/' + chatUser.uid + '/' + token).set(true);
+
+            await chatRef('chats/' + token + '/messages').push({
                 sender_type: 'system',
                 sender: 'system',
                 message: 'Support session started. Our team typically responds within minutes.',
@@ -111,7 +173,7 @@ function initGuestChatForm() {
                 formatted_time: tpFormatTime(now)
             });
 
-            await tpRef('chats/' + token + '/messages').push({
+            await chatRef('chats/' + token + '/messages').push({
                 sender_type: 'guest',
                 sender: name,
                 message: message,
@@ -184,12 +246,12 @@ function initActiveChatSession() {
  * Fetch Live Chat Messages + session status from Firebase
  */
 async function fetchGuestMessages() {
-    if (!currentSessionToken || !tpDB) return;
+    if (!currentSessionToken || !chatDB) return;
 
     try {
         const [sessSnap, msgSnap] = await Promise.all([
-            tpRef('chats/' + currentSessionToken).once('value'),
-            tpRef('chats/' + currentSessionToken + '/messages').once('value')
+            chatRef('chats/' + currentSessionToken).once('value'),
+            chatRef('chats/' + currentSessionToken + '/messages').once('value')
         ]);
 
         const session = sessSnap.val();
@@ -205,11 +267,9 @@ async function fetchGuestMessages() {
     }
 }
 
-let guestSelectedImgFile = null;
-
 /**
  * Handle Guest Image File Selection with 2MB Limit Check & Warning Modal
- * (Validation kept; attachments are not uploaded in this Firebase demo)
+ * (Validation kept; attachments are not uploaded in this demo)
  */
 function handleGuestImageSelect(input) {
     if (!input.files || input.files.length === 0) return;
@@ -284,8 +344,6 @@ function closeGuestLightbox() {
 
 /**
  * Message rendering — INCREMENTAL: only new bubbles are appended.
- * Never re-renders existing messages, so the chat never "refreshes"
- * more than needed.
  */
 let renderedMsgCount = 0;
 
@@ -302,7 +360,7 @@ function buildGuestBubble(msg) {
     } else if (msg.sender_type === 'admin') {
         bubble.className = 'chat-bubble admin';
         bubble.innerHTML = `
-            <div class="agent-name">${IC_svg('headset')} Support Agent</div>
+            <div class="agent-name">${IC_svg('headset')} ${escapeHtml(msg.sender || 'Support Agent')}</div>
             ${hasText ? `<div>${escapeHtml(msg.message)}</div>` : ''}
             <div class="msg-meta">${escapeHtml(msg.formatted_time || '')}</div>
         `;
@@ -375,7 +433,7 @@ function updateSessionStatusUI(session) {
  * Send Guest/Admin Reply Message via Firebase (text only in this demo)
  */
 async function sendGuestMessage() {
-    if (isSendingMsg || !currentSessionToken || !tpDB) return;
+    if (isSendingMsg || !currentSessionToken || !chatDB || !chatUser) return;
 
     const input = document.getElementById('guestChatInput');
     const sendBtn = document.getElementById('btnGuestChatSend');
@@ -392,19 +450,21 @@ async function sendGuestMessage() {
     try {
         const now = tpNow();
 
-        const msgRef = tpRef('chats/' + currentSessionToken + '/messages').push();
+        const senderName = chatIsAdmin
+            ? (chatAdminName || 'Support Agent')
+            : (localStorage.getItem('tp_chat_name') || chatUser.email || 'Guest');
+
+        const msgRef = chatRef('chats/' + currentSessionToken + '/messages').push();
         const newMsg = {
-            sender_type: currentSenderType,
-            sender: currentSenderType === 'admin'
-                ? (localStorage.getItem('tp_admin_user') || 'Support Agent')
-                : (localStorage.getItem('tp_chat_name') || 'Guest'),
+            sender_type: chatIsAdmin ? 'admin' : 'guest',
+            sender: senderName,
             message: text,
             created_at: now,
             formatted_time: tpFormatTime(now)
         };
         await msgRef.set(newMsg);
 
-        await tpRef('chats/' + currentSessionToken).update({
+        await chatRef('chats/' + currentSessionToken).update({
             last_message: text,
             last_message_time: tpFormatTime(now)
         });
@@ -427,9 +487,9 @@ async function sendGuestMessage() {
  * Close Session from Guest Side
  */
 async function closeGuestSession() {
-    if (!tpDB) return;
+    if (!chatDB) return;
     try {
-        await tpRef('chats/' + currentSessionToken).update({
+        await chatRef('chats/' + currentSessionToken).update({
             status: 'closed',
             close_reason: 'Closed by user',
             closed_at: tpNow()
@@ -442,37 +502,39 @@ async function closeGuestSession() {
 }
 
 /**
- * Load Previous Sessions List for "Your Sessions" view
+ * Load Previous Sessions List — admins see all, a user sees only their own
  */
 async function loadGuestSessionsList() {
     const container = document.getElementById('guestSessionsListContainer');
     if (!container) return;
-    if (!tpDB) {
+    await tpChatBoot();
+    if (!chatDB) {
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Firebase not connected.</div>';
         return;
     }
 
     try {
-        const snap = await tpRef('chats').once('value');
-        const raw = snap.val() || {};
-        const isAdmin = (new URLSearchParams(window.location.search).get('admin') === '1');
-        const myEmail = (localStorage.getItem('tp_chat_email') || '').toLowerCase();
-
-        let sessions = Object.keys(raw).map(token => {
-            const s = raw[token];
-            s.token = token;
-            return s;
-        });
-
-        // Admin sees all, guest sees only their own email
-        if (!isAdmin && myEmail) {
-            sessions = sessions.filter(s => (s.email || '').toLowerCase() === myEmail);
+        let sessions = [];
+        if (chatIsAdmin) {
+            const snap = await chatRef('chats').once('value');
+            const raw = snap.val() || {};
+            sessions = Object.keys(raw).map(token => { raw[token].token = token; return raw[token]; });
+        } else if (chatUser) {
+            const idxSnap = await chatRef('chat_index/' + chatUser.uid).once('value').catch(() => null);
+            const tokens = Object.keys((idxSnap && idxSnap.val()) || {});
+            const parts = await Promise.all(tokens.map(t => chatRef('chats/' + t).once('value').catch(() => null)));
+            sessions = parts.map((s, i) => {
+                const v = s && s.val();
+                if (!v) return null;
+                v.token = tokens[i];
+                return v;
+            }).filter(Boolean);
         }
         sessions.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
         if (sessions.length > 0) {
             container.innerHTML = sessions.map(s =>
-                `<a href="guest-chat-room.html?token=${encodeURIComponent(s.token)}${isAdmin ? '&admin=1' : ''}" class="session-item-card">
+                `<a href="guest-chat-room.html?token=${encodeURIComponent(s.token)}${chatIsAdmin ? '&admin=1' : ''}" class="session-item-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <div style="font-weight: 800; font-size: 14px; color: var(--text);">${escapeHtml(s.subject || 'Support Session')}</div>
                         <span class="status-badge ${s.status}">${(s.status || 'open').toUpperCase()}</span>
@@ -480,7 +542,7 @@ async function loadGuestSessionsList() {
                     <div style="font-size: 12px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                         ${escapeHtml(s.last_message || 'No messages yet')}
                     </div>
-                    ${isAdmin ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(s.name || '')} • ${escapeHtml(s.email || '')}</div>` : ''}
+                    ${chatIsAdmin ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(s.name || '')} • ${escapeHtml(s.email || '')}</div>` : ''}
                     <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px; text-align: right;">
                         ${escapeHtml(s.last_message_time || '')}
                     </div>

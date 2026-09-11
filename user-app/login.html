@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet">
@@ -257,6 +258,7 @@
 
     <!-- Firebase SDK (user side config) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -354,52 +356,109 @@ async function handleLogin() {
     if (!email) { showToast('Please enter your email.', 'error'); return; }
     if (!emailRegex.test(email)) { showToast('Please enter a valid email address.', 'error'); return; }
     if (!passVal) { showToast('Please enter your password.', 'error'); return; }
-    if (!tpDB) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
+    if (!tpDB || !tpAuth) { showToast('Firebase not connected. Check firebase-config.js', 'error'); return; }
 
     btn.disabled = true;
     btn.textContent = 'LOGGING IN...';
 
     try {
-        const emailKey = tpEmailKey(email);
-        const userSnap = await tpRef('users/' + emailKey).once('value');
-        const user = userSnap.val();
+        const cred = await tpAuth.signInWithEmailAndPassword(email, passVal);
+        const user = cred.user;
+        const uid = user.uid;
 
-        if (!user) {
-            showToast('Account not found. Please register first.', 'error');
+        const userSnap = await tpRef('users/' + uid).once('value').catch(() => null);
+        const profile = userSnap && userSnap.val();
+
+        if (!profile) {
+            await tpAuth.signOut();
+            showToast('Account profile not found. Please contact support.', 'error');
             return;
         }
 
-        // Admin-controlled account status
-        if (user.status === 'pending') {
+        if (profile.status === 'pending') {
+            await tpAuth.signOut();
             showToast('Your account is pending admin approval. Please wait.', 'error');
             return;
         }
-        if (user.status === 'blocked') {
+        if (profile.status === 'blocked') {
+            await tpAuth.signOut();
             showToast('Your account has been blocked. Contact support via Live Chat.', 'error');
             return;
         }
 
-        const hash = await tpHashPassword(passVal);
-        if (!user.password || user.password !== hash) {
-            showToast('Incorrect email or password.', 'error');
-            return;
-        }
-
-        // Create session + remember login
-        const token = tpId();
-        await tpRef('sessions/' + token).set({ email: user.email, emailKey: emailKey, created_at: tpNow() });
-        localStorage.setItem('tp_session_token', token);
-        tpSetSession(user.email, user.full_name);
-
-        await tpRef('users/' + emailKey + '/last_login').set(tpNow());
+        tpSetSession(profile.email || email, profile.full_name || '', uid);
+        await tpRef('users/' + uid + '/last_login').set(tpNow()).catch(() => {});
 
         showToast('Login successful! Redirecting...', 'success');
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
     } catch (e) {
-        showToast('Network error during login. Check Firebase rules/permissions.', 'error');
+        if (e && e.code === 'auth/user-not-found') {
+            // Legacy user? Auto-migrate old emailKey-based accounts to Firebase Auth.
+            const migrated = await tryLegacyMigration(email, passVal);
+            if (!migrated) {
+                showToast('Account not found. Please register first.', 'error');
+            }
+        } else if (e && (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential')) {
+            showToast('Incorrect email or password.', 'error');
+        } else if (e && e.code === 'auth/invalid-email') {
+            showToast('Please enter a valid email address.', 'error');
+        } else {
+            showToast('Network error during login. Check Firebase rules/permissions.', 'error');
+        }
     } finally {
         btn.disabled = false;
         btn.textContent = origText;
+    }
+}
+
+/* One-time migration: old accounts were stored under users/<email-key> with a
+   local hash. Reproduce that hash; if it matches we create the Firebase Auth
+   account and copy the profile to users/{uid} (pending admin verification). */
+async function tryLegacyMigration(email, passVal) {
+    try {
+        const emailKey = tpEmailKey(email);
+        const snap = await tpRef('users/' + emailKey).once('value').catch(() => null);
+        const legacy = snap && snap.val();
+        if (!legacy || !legacy.password) return false;
+
+        const hash = await tpHashPassword(passVal);
+        if (legacy.password !== hash) return false;
+
+        const cred = await tpAuth.createUserWithEmailAndPassword(email, passVal);
+        const uid = cred.user.uid;
+        const name = legacy.full_name || email.split('@')[0];
+        const legacyWallet = Math.max(0, Number(legacy.wallet || 0));
+
+        await tpRef('users/' + uid).set({
+            email: email.toLowerCase(),
+            full_name: name,
+            referral_code: legacy.referral_code || tpRefCode(),
+            referred_by: legacy.referred_by || '',
+            wallet: 0,
+            pending_wallet: legacyWallet,
+            team_count: legacy.team_count || 0,
+            status: 'pending',
+            migrated: true,
+            created_at: legacy.created_at || tpNow(),
+            upi_id: legacy.upi_id || '',
+            mpin: legacy.mpin || '',
+            account_holder: legacy.account_holder || '',
+            bank_name: legacy.bank_name || '',
+            account_number: legacy.account_number || '',
+            ifsc_code: legacy.ifsc_code || ''
+        });
+
+        if (legacy.referral_code) {
+            await tpRef('refcodes/' + legacy.referral_code).set(uid).catch(() => {});
+        }
+
+        await tpRef('users/' + emailKey).remove().catch(() => {});
+
+        await tpAuth.signOut();
+        showToast('Account migrated to secure login. Pending admin approval. Please login after approval.', 'info');
+        return true;
+    } catch (e) {
+        return false;
     }
 }
 </script>

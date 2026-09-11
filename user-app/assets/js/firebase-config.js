@@ -25,6 +25,28 @@ if (typeof firebase !== 'undefined' && typeof firebase.analytics === 'function')
   try { firebase.analytics(); } catch (e) { }
 }
 
+/* ---------- Firebase Auth (email/password) ---------- */
+const tpAuth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') ? firebase.auth() : null;
+
+/* Resolves once with the signed-in user (or null). Use before reading protected data. */
+let tpAuthResolved = null;
+const tpAuthReady = new Promise(resolve => {
+  if (!tpAuth) { resolve(null); return; }
+  tpAuth.onAuthStateChanged(u => { tpAuthResolved = u; resolve(u); });
+});
+
+function tpWaitAuth() {
+  return tpAuthReady.then(() => tpAuthResolved);
+}
+
+/* Generate a unique referral code for new accounts */
+function tpRefCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
 const TP_REFERRAL_DEFAULT = 'GET20';
 const TP_REGISTER_BONUS = 80;
 const TP_REFERRAL_BONUS = 20;
@@ -155,16 +177,30 @@ function tpFormatTime(ts) {
   return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-function tpSetSession(email, name) {
+/* Session helpers — now backed by Firebase Auth (uid). localStorage is only a
+   display cache; all authorization comes from the real Firebase token. */
+function tpSetSession(email, name, uid) {
   localStorage.setItem('tp_user_email', email);
   localStorage.setItem('tp_user_name', name || '');
+  if (uid) localStorage.setItem('tp_user_uid', uid);
 }
 
 function tpGetSession() {
   return {
-    token: localStorage.getItem('tp_session_token') || '',
-    email: localStorage.getItem('tp_user_email') || '',
+    token: (tpAuthResolved && tpAuthResolved.uid) || localStorage.getItem('tp_user_uid') || '',
+    email: (tpAuthResolved && tpAuthResolved.email) || localStorage.getItem('tp_user_email') || '',
     name: localStorage.getItem('tp_user_name') || ''
+  };
+}
+
+/** Await Firebase Auth, return { uid, email, name } (or {}) for the signed-in user. */
+async function tpGetSessionAsync() {
+  const u = await tpWaitAuth();
+  if (!u) return {};
+  return {
+    uid: u.uid,
+    email: u.email || '',
+    name: u.displayName || localStorage.getItem('tp_user_name') || ''
   };
 }
 
@@ -172,4 +208,13 @@ function tpClearSession() {
   localStorage.removeItem('tp_session_token');
   localStorage.removeItem('tp_user_email');
   localStorage.removeItem('tp_user_name');
+  localStorage.removeItem('tp_user_uid');
+  if (tpAuth) { try { tpAuth.signOut(); } catch (e) { } }
+}
+
+/* Central per-user MPIN hasher (kept client-side; salted per user via uid). */
+async function tpHashMpin(mpin, salt) {
+  const data = new TextEncoder().encode('tp-mpin-' + (salt || '') + String(mpin));
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }

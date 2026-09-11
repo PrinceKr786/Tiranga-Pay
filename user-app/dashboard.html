@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Home - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Firebase SDK (user side config) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -464,11 +466,11 @@
             <div class="home-info-chevron">›</div>
         </a>
 
-        <a href="../apk/TirangaPay-v1.0.0.apk" class="home-info-card h-glass" style="background: linear-gradient(135deg, rgba(240, 249, 255, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%); border: 1px solid #BAE6FD;">
+        <a href="javascript:void(0)" class="home-info-card h-glass" id="btnInstallApp" onclick="tpInstallApp();" style="background: linear-gradient(135deg, rgba(240, 249, 255, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%); border: 1px solid #BAE6FD;">
             <div class="home-info-icon blue" style="background: linear-gradient(135deg, #0284C7, #38BDF8); color: #fff;"><span data-ic="rocket"></span></div>
             <div class="home-info-content">
                 <div class="home-info-title" style="color: #0284C7;">ANDROID APPLICATION</div>
-                <div class="home-info-value" style="font-size: 15px; font-weight: 800;">Download TirangaPay APK</div>
+                <div class="home-info-value" style="font-size: 15px; font-weight: 800;">Install TirangaPay App</div>
             </div>
             <span style="font-size: 11px; font-weight: 800; background: #0284C7; color: #fff; padding: 4px 10px; border-radius: 99px;">Get App &rsaquo;</span>
         </a>
@@ -513,13 +515,10 @@
 <script>
 let currentEmailKey = '';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const session = tpGetSession();
-    if (!session.email || !session.token) {
-        window.location.href = 'login.html';
-        return;
-    }
-    currentEmailKey = tpEmailKey(session.email);
+document.addEventListener('DOMContentLoaded', async () => {
+    const session = await tpGetSessionAsync();
+    if (!session.uid) { window.location.href = 'login.html'; return; }
+    currentEmailKey = session.uid;
 
     tpRef('users/' + currentEmailKey).once('value').then(async snap => {
         const u = snap.val();
@@ -626,8 +625,6 @@ function renderStatus(u) {
 }
 
 function logoutUser() {
-    const s = tpGetSession();
-    if (s.token) tpRef('sessions/' + s.token).remove().catch(() => {});
     tpClearSession();
     window.location.href = 'login.html';
 }

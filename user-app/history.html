@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transaction History - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
 
     <!-- Firebase SDK (user side config) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -79,9 +81,9 @@
 let currentEmailKey = '';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const session = tpGetSession();
-    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
-    currentEmailKey = tpEmailKey(session.email);
+    const session = await tpGetSessionAsync();
+    if (!session.uid) { window.location.href = 'login.html'; return; }
+    currentEmailKey = session.uid;
 
     const userSnap = await tpRef('users/' + currentEmailKey).once('value').catch(() => null);
     if (!userSnap || !userSnap.val()) { tpClearSession(); window.location.href = 'login.html'; return; }

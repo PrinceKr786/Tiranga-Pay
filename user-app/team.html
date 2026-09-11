@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Team - Tiranga Pay</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="../manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
@@ -314,9 +316,9 @@ function teamDayStart() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const session = tpGetSession();
-    if (!session.email || !session.token) { window.location.href = 'login.html'; return; }
-    currentEmailKey = tpEmailKey(session.email);
+    const session = await tpGetSessionAsync();
+    if (!session.uid) { window.location.href = 'login.html'; return; }
+    currentEmailKey = session.uid;
 
     const ps = await tpLoadPlatformSettings();
     const refBonus = Number(ps.referral_bonus) || TP_REFERRAL_BONUS;
@@ -337,73 +339,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('inviteLinkText').title = myReferralLink;
     document.getElementById('inviteCopyBtn').onclick = () => { copyText(myReferralLink); };
 
-    // Load members + deposits
     let members = [];
-    let depositsByMember = {};
     try {
-        const all = await tpRef('users').once('value');
-        const raw = all.val() || {};
-        const todayStart = teamDayStart();
+        const teamSnap = await tpRef('teams/' + currentEmailKey).once('value').catch(() => null);
+        const raw = (teamSnap && teamSnap.val()) || {};
 
-        Object.keys(raw).forEach(ek => {
-            const usr = raw[ek];
-            if (usr.referred_by === currentEmailKey) {
-                members.push({ key: ek, ...usr });
-            }
-        });
+        members = Object.keys(raw).map(k => ({ key: k, ...raw[k] }));
 
-        // Aggregate deposits for all members in one pass
-        const depSnap = await tpRef('deposits').once('value').catch(() => null);
-        const depRaw = (depSnap && depSnap.val()) || {};
-        members.forEach(m => {
-            const list = depRaw[m.key] || {};
-            Object.values(list).forEach(d => {
-                if (!depositsByMember[m.key]) depositsByMember[m.key] = [];
-                depositsByMember[m.key].push(d);
-            });
-            if (!depositsByMember[m.key]) depositsByMember[m.key] = [];
-        });
-
-        // Compute stats
         let totalRecharge = 0;
         let todayRecharge = 0;
         let totalEarn = 0;
         let todayMembers = 0;
+        const todayStart = teamDayStart();
 
         members.forEach(m => {
-            const approved = (depositsByMember[m.key] || []).filter(d => d.status === 'approved');
-            const memberTotal = approved.reduce((s, d) => s + Number(d.amount || 0), 0);
-            const memberToday = approved.filter(d => (d.created_at || 0) >= todayStart).reduce((s, d) => s + Number(d.amount || 0), 0);
-            totalRecharge += memberTotal;
-            todayRecharge += memberToday;
-            if ((m.created_at || 0) >= todayStart && m.status === 'approved') todayMembers++;
+            const recharge = Number(m.recharge || 0);
+            totalRecharge += recharge;
+            todayRecharge += Number(m.today_recharge || 0);
+            if ((m.joined || 0) >= todayStart && m.status === 'approved') todayMembers++;
         });
 
-        const membersCount = members.length;
-        totalEarn = membersCount * refBonus + totalRecharge * refComm;
+        totalEarn = members.length * refBonus + totalRecharge * refComm;
 
         document.querySelector('[data-total-commission]').textContent = INR(totalEarn);
         document.querySelector('[data-today-recharge]').textContent = INR(todayRecharge);
         document.querySelector('[data-today-members]').textContent = String(todayMembers);
         document.querySelector('[data-total-recharge]').textContent = INR(totalRecharge);
-        document.querySelector('[data-total-members]').textContent = String(membersCount);
+        document.querySelector('[data-total-members]').textContent = String(members.length);
 
-        renderTeam(members, depositsByMember);
+        renderTeam(members);
     } catch (e) {
         const list = document.getElementById('teamList');
         list.innerHTML = '<div class="t-no-members t-glass">Failed to load team.</div>';
     }
 });
 
-function renderTeam(members, depositsByMember) {
+function renderTeam(members) {
     const list = document.getElementById('teamList');
     if (!members.length) {
         list.innerHTML = '<div class="t-no-members t-glass">No team members yet</div>';
         return;
     }
     list.innerHTML = members.slice(0, 20).map(m => {
-        const approved = (depositsByMember[m.key] || []).filter(d => d.status === 'approved');
-        const memberTotal = approved.reduce((s, d) => s + Number(d.amount || 0), 0);
+        const recharge = Number(m.recharge || 0);
         const st = m.status === 'approved' ? IC_svg('check') : (m.status === 'blocked' ? IC_svg('close') : '•');
         const stColor = m.status === 'approved' ? '#15803D' : (m.status === 'blocked' ? '#B91C1C' : '#B45309');
         return `
@@ -418,7 +396,7 @@ function renderTeam(members, depositsByMember) {
                 </div>
                 <div>
                     <div class="t-member-dep-label">Recharge</div>
-                    <div class="t-member-dep-val">${INR(memberTotal)}</div>
+                    <div class="t-member-dep-val">${INR(recharge)}</div>
                 </div>
             </div>
         </div>`;
